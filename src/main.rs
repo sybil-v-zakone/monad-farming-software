@@ -1,3 +1,5 @@
+#![allow(unused, dead_code)]
+
 use crate::onchain::{client::EvmClient, dapps::hashflow::swap};
 use alloy::{
     network::EthereumWallet, primitives::address, providers::ProviderBuilder,

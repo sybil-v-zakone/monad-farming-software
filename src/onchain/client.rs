@@ -10,7 +10,7 @@ use alloy::{
 use std::sync::Arc;
 use tracing::instrument;
 
-use super::error::{Error, OnchainResult};
+use super::error::{Error, Result};
 
 pub struct EvmClient<F, P, N>
 where
@@ -34,7 +34,7 @@ where
     }
 
     #[instrument(skip_all)]
-    pub async fn send_transaction(&self, mut tx: N::TransactionRequest) -> OnchainResult<bool> {
+    pub async fn send_transaction(&self, mut tx: N::TransactionRequest) -> Result<bool> {
         tx.set_from(self.signer.address());
 
         let receipt = self
@@ -61,7 +61,7 @@ where
         Ok(status)
     }
 
-    pub async fn get_signature(&self, message: &String) -> OnchainResult<String> {
+    pub async fn get_signature(&self, message: &String) -> Result<String> {
         let signature = self
             .signer
             .sign_message(message.as_bytes())
