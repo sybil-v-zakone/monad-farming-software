@@ -1,15 +1,15 @@
 use alloy::{
-    hex::{self, FromHex},
-    network::Network,
+    hex::FromHex,
+    network::Ethereum,
     primitives::{Address, FixedBytes, U256, address},
-    providers::{Provider, fillers::TxFiller},
-    rpc::types::TransactionRequest,
+    providers::Provider,
     sol,
 };
 use rquest::{Client as RquestClient, header};
 use serde::{Deserialize, Serialize};
 
-use crate::onchain::{client::EvmClient, error::Result};
+use crate::onchain::error::Error;
+use crate::{Result, onchain::client::Client as EvmClient};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -153,24 +153,24 @@ async fn get_quote(
         .headers(headers)
         .json(&req)
         .send()
-        .await?
+        .await
+        .map_err(Error::Request)?
         .json::<Response>()
-        .await?;
+        .await
+        .map_err(Error::Request)?;
 
-    Ok(res.quotes[0].clone())
+    Ok(res.quotes.into_iter().next().unwrap())
 }
 
-pub async fn swap<F, P, N>(
-    evm_client: &EvmClient<F, P, N>,
+pub async fn swap<P>(
+    evm_client: &EvmClient<P>,
     rquest_client: RquestClient,
     token_in: Address,
     token_out: Address,
     amount: u64,
 ) -> Result<bool>
 where
-    F: TxFiller<N>,
-    P: Provider<N>,
-    N: Network<TransactionRequest = TransactionRequest>,
+    P: Provider<Ethereum>,
 {
     let quote = get_quote(
         rquest_client,
@@ -183,8 +183,6 @@ where
 
     let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
 
-    println!("{:?\n\n}", quote.quote_data);
-
     let tx_req = contract
         .tradeRFQT(RFQTQuote::new_from_quote(
             quote,
@@ -196,11 +194,7 @@ where
         .value(U256::from(amount))
         .into_transaction_request();
 
-    print!("{:?}", tx_req);
-
-    let status = evm_client.send_transaction(tx_req).await?;
-
-    Ok(true)
+    evm_client.send_transaction(tx_req, None).await
 }
 
 impl RFQTQuote {
@@ -220,16 +214,14 @@ impl RFQTQuote {
             quoteToken: token_out,
             effectiveBaseTokenAmount: amount,
             baseTokenAmount: amount,
-            quoteTokenAmount: U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)?,
+            quoteTokenAmount: U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)
+                .map_err(Error::Parse)?,
             quoteExpiry: U256::from(quote.quote_data.quote_expiry),
             nonce: U256::from(quote.quote_data.nonce),
-            txid: FixedBytes::from_hex(quote.quote_data.txid)?,
-            signature: alloy::hex::decode(quote.signature)?.into(),
+            txid: FixedBytes::from_hex(quote.quote_data.txid).map_err(Error::FromHex)?,
+            signature: alloy::hex::decode(quote.signature)
+                .map_err(Error::FromHex)?
+                .into(),
         })
     }
 }
-
-// TODO: ERROR reverted
-
-// TransactionRequest { from: None, to: Some(Call(0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1)), gas_price: None, max_fee_per_gas: None, max_priority_fee_per_gas: None, max_fee_per_blob_gas: None, gas: None, value: Some(1000000000), input: TransactionInput { input: Some(0x30e08c870000000000000000000000000cf6c9089e8b8eafcbfbbb430b55a3904c7402260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e6b3e9aa99c4c01b041779ef7acf659ab4655a50000000000000000000000000e6b3e9aa99c4c01b041779ef7acf659ab4655a500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f817257fed379853cde0fa4f97ab987181b1e5ea000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067cc4dd800000000000000000000000000000000000000000000000000000195760f29911000000c8000c800000017254c3880ffffffffffffff002617a841972bd1000000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000000411e6f7d4afe2a4870e0df6e24c0ca1993e38b4cf0e1f3bff69b48f276fb53427f559a59588cf3c96eb907d27dea6970dd7e38a31b602be0195b91cccbf7ce8ec91b00000000000000000000000000000000000000000000000000000000000000Error: Rpc(ErrorResp(ErrorPayload { code: -32603, message: "execution reverted", data: Some(RawValue("0x")) }))
-// ), data: None }, nonce: None, chain_id: None, access_list: None, transaction_type: None, blob_versioned_hashes: None, sidecar: None, authorization_list: None }

@@ -1,14 +1,18 @@
 #![allow(unused, dead_code)]
 
-use crate::onchain::{client::EvmClient, dapps::hashflow::swap};
+use crate::onchain::{client::Client as EvmClient, dapps::hashflow::swap};
 use alloy::{
     network::EthereumWallet, primitives::address, providers::ProviderBuilder,
     signers::local::PrivateKeySigner,
 };
+use alloy_chains::NamedChain;
 use rquest::{Client as RquestClient, Impersonate};
 use std::{str::FromStr, sync::Arc};
 
+mod error;
 mod onchain;
+
+pub use crate::error::{Error, Result};
 
 const PK: &str = "";
 
@@ -20,7 +24,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let rpc_url = "https://testnet-rpc.monad.xyz".parse()?;
     let provider = Arc::new(ProviderBuilder::new().wallet(wallet).on_http(rpc_url));
 
-    let evm_client = EvmClient::new(signer, Arc::clone(&provider));
+    let evm_client = EvmClient::new(
+        signer,
+        NamedChain::MonadTestnet.into(),
+        Arc::clone(&provider),
+    );
     let token_in = address!("0x0000000000000000000000000000000000000000");
     let token_out = address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea");
     let amount: u64 = 10000000000000000;
