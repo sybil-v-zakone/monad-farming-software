@@ -9,7 +9,7 @@ use alloy::{
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum Error {
+pub enum ClientError {
     #[error(transparent)]
     Rpc(#[from] RpcErr<TransportErrorKind>),
 
@@ -33,4 +33,7 @@ pub enum Error {
 
     #[error("tx type `{0}` is not supported")]
     UnexpectedTxType(TxType),
+
+    #[error(transparent)]
+    Contract(#[from] alloy::contract::Error),
 }
