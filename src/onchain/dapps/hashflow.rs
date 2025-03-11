@@ -8,7 +8,7 @@ use alloy::{
 use rquest::{Client as RquestClient, header};
 use serde::{Deserialize, Serialize};
 
-use crate::onchain::error::Error;
+use crate::onchain::error::ClientError;
 use crate::{Result, onchain::client::Client as EvmClient};
 
 #[derive(Serialize)]
@@ -154,10 +154,10 @@ async fn get_quote(
         .json(&req)
         .send()
         .await
-        .map_err(Error::Request)?
+        .map_err(ClientError::Request)?
         .json::<Response>()
         .await
-        .map_err(Error::Request)?;
+        .map_err(ClientError::Request)?;
 
     Ok(res.quotes.into_iter().next().unwrap())
 }
@@ -215,12 +215,12 @@ impl RFQTQuote {
             effectiveBaseTokenAmount: amount,
             baseTokenAmount: amount,
             quoteTokenAmount: U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)
-                .map_err(Error::Parse)?,
+                .map_err(ClientError::Parse)?,
             quoteExpiry: U256::from(quote.quote_data.quote_expiry),
             nonce: U256::from(quote.quote_data.nonce),
-            txid: FixedBytes::from_hex(quote.quote_data.txid).map_err(Error::FromHex)?,
+            txid: FixedBytes::from_hex(quote.quote_data.txid).map_err(ClientError::FromHex)?,
             signature: alloy::hex::decode(quote.signature)
-                .map_err(Error::FromHex)?
+                .map_err(ClientError::FromHex)?
                 .into(),
         })
     }

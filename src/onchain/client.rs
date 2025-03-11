@@ -2,14 +2,26 @@ use alloy::{
     consensus::{SignableTransaction, TxEnvelope, TxType, TypedTransaction},
     hex::encode_prefixed,
     network::{Ethereum, ReceiptResponse, TransactionBuilder, TxSigner},
+    primitives::{Address, U256},
     providers::Provider,
     rpc::types::TransactionRequest,
     signers::{Signer, local::PrivateKeySigner},
+    sol,
+    sol_types::SolCall,
 };
 use alloy_chains::Chain;
 
-use super::error::Error;
+use super::{error::ClientError, token::Token};
 use crate::Result;
+
+sol! {
+    #[sol(rpc)]
+    interface IERC20 {
+        function approve(address spender, uint256 amount) external returns (bool);
+
+        function allowance(address owner, address spender) external view returns (uint256);
+    }
+}
 
 pub struct Client<P, N = StrictNonceManager>
 where
@@ -38,7 +50,7 @@ where
     async fn sign_tx_request(&self, tx: TransactionRequest) -> Result<TxEnvelope> {
         let unsigned_tx = tx
             .build_unsigned()
-            .map_err(|e| Error::UnbuiltTx(Box::new(e)))?;
+            .map_err(|e| ClientError::UnbuiltTx(Box::new(e)))?;
 
         match unsigned_tx {
             TypedTransaction::Legacy(mut t) => {
@@ -46,7 +58,7 @@ where
                     .signer
                     .sign_transaction(&mut t)
                     .await
-                    .map_err(Error::Signer)?;
+                    .map_err(ClientError::Signer)?;
                 Ok(t.into_signed(sig).into())
             }
             TypedTransaction::Eip1559(mut t) => {
@@ -54,10 +66,10 @@ where
                     .signer
                     .sign_transaction(&mut t)
                     .await
-                    .map_err(Error::Signer)?;
+                    .map_err(ClientError::Signer)?;
                 Ok(t.into_signed(sig).into())
             }
-            _ => Err(crate::Error::EvmClient(Error::UnexpectedTxType(
+            _ => Err(crate::Error::EvmClient(ClientError::UnexpectedTxType(
                 unsigned_tx.tx_type(),
             ))),
         }
@@ -77,7 +89,11 @@ where
 
         match tx_type {
             TxType::Legacy => {
-                let gas_price = self.provider.get_gas_price().await.map_err(Error::Rpc)?;
+                let gas_price = self
+                    .provider
+                    .get_gas_price()
+                    .await
+                    .map_err(ClientError::Rpc)?;
                 tx.set_gas_price(gas_price);
             }
             TxType::Eip1559 => {
@@ -85,16 +101,22 @@ where
                     .provider
                     .estimate_eip1559_fees(None)
                     .await
-                    .map_err(Error::Rpc)?;
+                    .map_err(ClientError::Rpc)?;
                 tx.set_max_fee_per_gas(fee.max_fee_per_gas);
                 tx.set_max_priority_fee_per_gas(fee.max_priority_fee_per_gas);
             }
             _ => {
-                return Err(crate::Error::EvmClient(Error::UnexpectedTxType(tx_type)));
+                return Err(crate::Error::EvmClient(ClientError::UnexpectedTxType(
+                    tx_type,
+                )));
             }
         };
 
-        let gas = self.provider.estimate_gas(&tx).await.map_err(Error::Rpc)?;
+        let gas = self
+            .provider
+            .estimate_gas(&tx)
+            .await
+            .map_err(ClientError::Rpc)?;
         tx.set_gas_limit(gas);
 
         let envelope = self.sign_tx_request(tx).await?;
@@ -103,10 +125,10 @@ where
             .provider
             .send_tx_envelope(envelope)
             .await
-            .map_err(Error::Rpc)?
+            .map_err(ClientError::Rpc)?
             .get_receipt()
             .await
-            .map_err(Error::PendingTx)?;
+            .map_err(ClientError::PendingTx)?;
 
         let (_, url) = self.chain.etherscan_urls().unwrap_or(("", ""));
 
@@ -125,12 +147,59 @@ where
         Ok(true)
     }
 
+    /// Approves a spender to transfer tokens if needed.
+    ///
+    /// - Returns Ok(true) immediately if the token is native.
+    /// - If ignore_allowance is true, skips the allowance check.
+    /// - Sends an approval tx only if the current allowance is less than the requested amount.
+    ///
+    /// # Errors
+    ///
+    /// Fails if the allowance query or the transaction fails.
+    #[tracing::instrument(skip_all)]
+    pub async fn approve(
+        &self,
+        token: Token,
+        spender: Address,
+        amount: U256,
+        ignore_allowance: bool,
+    ) -> Result<bool> {
+        if token.is_native() {
+            return Ok(true);
+        }
+
+        let instance = IERC20::new(token.address(), &self.provider);
+
+        let allowance = match ignore_allowance {
+            true => U256::ZERO,
+            false => {
+                instance
+                    .allowance(self.signer.address(), spender)
+                    .call()
+                    .await
+                    .map_err(ClientError::Contract)?
+                    ._0
+            }
+        };
+
+        match allowance < amount {
+            true => {
+                let tx = TransactionRequest::default()
+                    .with_input(IERC20::approveCall { spender, amount }.abi_encode())
+                    .with_to(token.address());
+
+                self.send_transaction(tx, None).await
+            }
+            false => Ok(true),
+        }
+    }
+
     pub async fn sign_message(&self, message: &String) -> Result<String> {
         let signature = self
             .signer
             .sign_message(message.as_bytes())
             .await
-            .map_err(Error::Signer)?;
+            .map_err(ClientError::Signer)?;
         let signature = encode_prefixed(signature.as_bytes());
         Ok(signature)
     }
@@ -149,7 +218,7 @@ impl<P: Provider> ClientNonceManager<P> for StrictNonceManager {
             .provider
             .get_transaction_count(client.signer.address())
             .await
-            .map_err(Error::Rpc)?;
+            .map_err(ClientError::Rpc)?;
         Ok(nonce)
     }
 }
