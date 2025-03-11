@@ -69,15 +69,15 @@ sol!(
     interface HashFlow {
         function tradeRFQT(
             address pool,
-            address zero_address,
+            address externalAccount,
             address trader,
-            address effective_trader,
-            address base_token,
-            address quote_token,
-            uint256 base_token_amount,
-            uint256 base_token_amount_twice,
-            uint256 quote_token_amount,
-            uint256 quote_expiry,
+            address effectiveTrader,
+            address baseToken,
+            address quoteToken,
+            uint256 effectiveBaseTokenAmount,
+            uint256 baseTokenAmount,
+            uint256 quoteTokenAmount,
+            uint256 quoteExpiry,
             uint256 nonce,
             bytes32 txid,
             bytes signature
@@ -139,6 +139,8 @@ where
     P: Provider<N>,
     N: Network<TransactionRequest = TransactionRequest>,
 {
+    todo!("Реверт транзакции из-за неверного with_input");
+
     let quote = get_quote(
         rquest_client,
         token_in,
@@ -148,20 +150,20 @@ where
     )
     .await?;
 
-    let contract = HashFlow::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
+    println!("Quote: {:?}", quote);
 
-    println!("{:?\n\n}", quote.quote_data);
+    let contract = HashFlow::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
 
     let tx_req: TransactionRequest = contract
         .tradeRFQT(
             quote.quote_data.pool,
             ZERO_ADDRESS,
-            evm_client.signer.address(),
-            evm_client.signer.address(),
-            token_in,
-            token_out,
-            U256::from(amount),
-            U256::from(amount),
+            quote.quote_data.trader,
+            quote.quote_data.effective_trader,
+            quote.quote_data.base_token,
+            quote.quote_data.quote_token,
+            U256::from_str_radix(&quote.quote_data.base_token_amount, 10)?,
+            U256::from_str_radix(&quote.quote_data.base_token_amount, 10)?,
             U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)?,
             U256::from(quote.quote_data.quote_expiry),
             U256::from(quote.quote_data.nonce),
@@ -173,7 +175,7 @@ where
 
     print!("{:?}", tx_req);
 
-    let status = evm_client.send_transaction(tx_req).await?;
+    // let status = evm_client.send_transaction(tx_req).await?;
 
     Ok(true)
 }

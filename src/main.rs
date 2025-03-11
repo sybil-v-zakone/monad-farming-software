@@ -1,4 +1,4 @@
-use crate::onchain::{client::EvmClient, dapps::hashflow::swap};
+use crate::onchain::client::EvmClient;
 use alloy::{
     network::EthereumWallet, primitives::address, providers::ProviderBuilder,
     signers::local::PrivateKeySigner,
@@ -16,17 +16,21 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut wallet = EthereumWallet::default();
     wallet.register_signer(signer.clone());
     let rpc_url = "https://testnet-rpc.monad.xyz".parse()?;
+    // let rpc_url = "https://base.drpc.org".parse()?;
+    // let rpc_url = "https://arbitrum.drpc.org".parse()?;
     let provider = Arc::new(ProviderBuilder::new().wallet(wallet).on_http(rpc_url));
 
     let evm_client = EvmClient::new(signer, Arc::clone(&provider));
     let token_in = address!("0x0000000000000000000000000000000000000000");
     let token_out = address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea");
-    let amount: u64 = 10000000000000000;
+    let amount: u64 = 125000000000039;
 
     let rquest_client = RquestClient::builder()
         .impersonate(Impersonate::Chrome133)
         .build()?;
 
-    swap(&evm_client, rquest_client, token_in, token_out, amount).await?;
+    // swap(&evm_client, rquest_client, token_in, token_out, amount).await?; // HASHFLOW OFF
+    // bridge(&evm_client, amount).await?; // GAZZIP ON
+
     Ok(())
 }
