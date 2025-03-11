@@ -1,15 +1,15 @@
 use alloy::{
-    hex::{self, FromHex},
-    network::Network,
+    hex::FromHex,
+    network::Ethereum,
     primitives::{Address, FixedBytes, U256, address},
-    providers::{Provider, fillers::TxFiller},
-    rpc::types::TransactionRequest,
+    providers::Provider,
     sol,
 };
 use rquest::{Client as RquestClient, header};
 use serde::{Deserialize, Serialize};
 
-use crate::onchain::{client::EvmClient, error::OnchainResult};
+use crate::onchain::error::ClientError;
+use crate::{Result, onchain::client::Client as EvmClient};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,7 +44,7 @@ struct Response {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-struct Quote {
+pub struct Quote {
     quote_data: QuoteData,
     signature: String,
 }
@@ -64,29 +64,62 @@ struct QuoteData {
     quote_expiry: u64,
 }
 
-sol!(
+sol! {
     #[sol(rpc)]
-    interface HashFlow {
-        function tradeRFQT(
-            address pool,
-            address externalAccount,
-            address trader,
-            address effectiveTrader,
-            address baseToken,
-            address quoteToken,
-            uint256 effectiveBaseTokenAmount,
-            uint256 baseTokenAmount,
-            uint256 quoteTokenAmount,
-            uint256 quoteExpiry,
-            uint256 nonce,
-            bytes32 txid,
-            bytes signature
-        ) external payable;
+    interface IHashflowRouter {
+        /// @notice Executes an intra-chain RFQ-T trade.
+        /// @param quote The quote data to be executed.
+        function tradeRFQT(RFQTQuote memory quote) external payable;
     }
-);
+
+    struct RFQTQuote {
+        /// @notice The address of the HashflowPool to trade against.
+        address pool;
+        /**
+         * @notice The external account linked to the HashflowPool.
+         * If the HashflowPool holds funds, this should be address(0).
+         */
+        address externalAccount;
+        /// @notice The recipient of the quoteToken at the end of the trade.
+        address trader;
+        /**
+         * @notice The account "effectively" making the trade (ultimately receiving the funds).
+         * This is commonly used by aggregators, where a proxy contract (the 'trader')
+         * receives the quoteToken, and the effective trader is the user initiating the call.
+         *
+         * This field DOES NOT influence movement of funds. However, it is used to check against
+         * quote replay.
+         */
+        address effectiveTrader;
+        /// @notice The token that the trader sells.
+        address baseToken;
+        /// @notice The token that the trader buys.
+        address quoteToken;
+        /**
+         * @notice The amount of baseToken sold in this trade. The exchange rate
+         * is going to be preserved as the quoteTokenAmount / baseTokenAmount ratio.
+         *
+         * Most commonly, effectiveBaseTokenAmount will == baseTokenAmount.
+         */
+        uint256 effectiveBaseTokenAmount;
+        /// @notice The max amount of baseToken sold.
+        uint256 baseTokenAmount;
+        /// @notice The amount of quoteToken bought when baseTokenAmount is sold.
+        uint256 quoteTokenAmount;
+        /// @notice The Unix timestamp (in seconds) when the quote expires.
+        /// @dev This gets checked against block.timestamp.
+        uint256 quoteExpiry;
+        /// @notice The nonce used by this effectiveTrader. Nonces are used to protect against replay.
+        uint256 nonce;
+        /// @notice Unique identifier for the quote.
+        /// @dev Generated off-chain via a distributed UUID generator.
+        bytes32 txid;
+        /// @notice Signature provided by the market maker (EIP-191).
+        bytes signature;
+    }
+}
 
 const HASHFLOW_CONTRACT_ADDRESS: Address = address!("0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1");
-const ZERO_ADDRESS: Address = address!("0x0000000000000000000000000000000000000000");
 
 async fn get_quote(
     rquest_client: RquestClient,
@@ -94,7 +127,7 @@ async fn get_quote(
     token_out: Address,
     amount: u64,
     trader: Address,
-) -> OnchainResult<Quote> {
+) -> Result<Quote> {
     let mut headers = header::HeaderMap::new();
     headers.insert("content-type", "application/json".parse().unwrap());
 
@@ -111,7 +144,7 @@ async fn get_quote(
             base_token: token_in,
             quote_token: token_out,
             base_token_amount: amount.to_string(),
-            trader: trader,
+            trader,
         }],
     };
 
@@ -120,24 +153,24 @@ async fn get_quote(
         .headers(headers)
         .json(&req)
         .send()
-        .await?
+        .await
+        .map_err(ClientError::Request)?
         .json::<Response>()
-        .await?;
+        .await
+        .map_err(ClientError::Request)?;
 
-    Ok(res.quotes[0].clone())
+    Ok(res.quotes.into_iter().next().unwrap())
 }
 
-pub async fn swap<F, P, N>(
-    evm_client: &EvmClient<F, P, N>,
+pub async fn swap<P>(
+    evm_client: &EvmClient<P>,
     rquest_client: RquestClient,
     token_in: Address,
     token_out: Address,
     amount: u64,
-) -> OnchainResult<bool>
+) -> Result<bool>
 where
-    F: TxFiller<N>,
-    P: Provider<N>,
-    N: Network<TransactionRequest = TransactionRequest>,
+    P: Provider<Ethereum>,
 {
     todo!("Реверт транзакции из-за неверного with_input");
 
@@ -150,37 +183,47 @@ where
     )
     .await?;
 
-    println!("Quote: {:?}", quote);
+    let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
 
-    let contract = HashFlow::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
-
-    let tx_req: TransactionRequest = contract
-        .tradeRFQT(
-            quote.quote_data.pool,
-            ZERO_ADDRESS,
-            quote.quote_data.trader,
-            quote.quote_data.effective_trader,
-            quote.quote_data.base_token,
-            quote.quote_data.quote_token,
-            U256::from_str_radix(&quote.quote_data.base_token_amount, 10)?,
-            U256::from_str_radix(&quote.quote_data.base_token_amount, 10)?,
-            U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)?,
-            U256::from(quote.quote_data.quote_expiry),
-            U256::from(quote.quote_data.nonce),
-            FixedBytes::from_hex(&quote.quote_data.txid[2..])?,
-            hex::decode(&quote.signature[2..])?.into(),
-        )
+    let tx_req = contract
+        .tradeRFQT(RFQTQuote::new_from_quote(
+            quote,
+            evm_client.signer.address(),
+            token_in,
+            token_out,
+            U256::from(amount),
+        )?)
         .value(U256::from(amount))
         .into_transaction_request();
 
-    print!("{:?}", tx_req);
-
-    // let status = evm_client.send_transaction(tx_req).await?;
-
-    Ok(true)
+    evm_client.send_transaction(tx_req, None).await
 }
 
-// TODO: ERROR reverted
-
-// TransactionRequest { from: None, to: Some(Call(0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1)), gas_price: None, max_fee_per_gas: None, max_priority_fee_per_gas: None, max_fee_per_blob_gas: None, gas: None, value: Some(1000000000), input: TransactionInput { input: Some(0x30e08c870000000000000000000000000cf6c9089e8b8eafcbfbbb430b55a3904c7402260000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e6b3e9aa99c4c01b041779ef7acf659ab4655a50000000000000000000000000e6b3e9aa99c4c01b041779ef7acf659ab4655a500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f817257fed379853cde0fa4f97ab987181b1e5ea000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067cc4dd800000000000000000000000000000000000000000000000000000195760f29911000000c8000c800000017254c3880ffffffffffffff002617a841972bd1000000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000000411e6f7d4afe2a4870e0df6e24c0ca1993e38b4cf0e1f3bff69b48f276fb53427f559a59588cf3c96eb907d27dea6970dd7e38a31b602be0195b91cccbf7ce8ec91b00000000000000000000000000000000000000000000000000000000000000Error: Rpc(ErrorResp(ErrorPayload { code: -32603, message: "execution reverted", data: Some(RawValue("0x")) }))
-// ), data: None }, nonce: None, chain_id: None, access_list: None, transaction_type: None, blob_versioned_hashes: None, sidecar: None, authorization_list: None }
+impl RFQTQuote {
+    pub fn new_from_quote(
+        quote: Quote,
+        trader: Address,
+        token_in: Address,
+        token_out: Address,
+        amount: U256,
+    ) -> Result<Self> {
+        Ok(Self {
+            pool: quote.quote_data.pool,
+            externalAccount: Address::ZERO,
+            trader,
+            effectiveTrader: trader,
+            baseToken: token_in,
+            quoteToken: token_out,
+            effectiveBaseTokenAmount: amount,
+            baseTokenAmount: amount,
+            quoteTokenAmount: U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)
+                .map_err(ClientError::Parse)?,
+            quoteExpiry: U256::from(quote.quote_data.quote_expiry),
+            nonce: U256::from(quote.quote_data.nonce),
+            txid: FixedBytes::from_hex(quote.quote_data.txid).map_err(ClientError::FromHex)?,
+            signature: alloy::hex::decode(quote.signature)
+                .map_err(ClientError::FromHex)?
+                .into(),
+        })
+    }
+}

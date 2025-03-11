@@ -1,15 +1,15 @@
 use alloy::{
+    consensus::TxType,
     hex,
+    network::{Ethereum, UnbuiltTransactionError},
     primitives::ruint::ParseError,
     providers::PendingTransactionError,
     transports::{RpcError as RpcErr, TransportErrorKind},
 };
 use thiserror::Error;
 
-pub type OnchainResult<T> = std::result::Result<T, Error>;
-
 #[derive(Debug, Error)]
-pub enum Error {
+pub enum ClientError {
     #[error(transparent)]
     Rpc(#[from] RpcErr<TransportErrorKind>),
 
@@ -27,4 +27,13 @@ pub enum Error {
 
     #[error(transparent)]
     Request(#[from] rquest::Error),
+
+    #[error(transparent)]
+    UnbuiltTx(#[from] Box<UnbuiltTransactionError<Ethereum>>),
+
+    #[error("tx type `{0}` is not supported")]
+    UnexpectedTxType(TxType),
+
+    #[error(transparent)]
+    Contract(#[from] alloy::contract::Error),
 }

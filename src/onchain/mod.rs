@@ -1,3 +1,4 @@
-pub mod dapps;
 pub mod client;
-mod error;
+pub mod dapps;
+pub mod error;
+pub mod token;
