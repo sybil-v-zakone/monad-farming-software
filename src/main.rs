@@ -1,20 +1,17 @@
-use crate::onchain::client::EvmClient;
+use crate::onchain::client::Client as EvmClient;
 use alloy::{
-    network::{Ethereum, EthereumWallet},
-    primitives::{Address, U16, U256, address},
+    network::Ethereum,
+    primitives::{U256, address},
     providers::ProviderBuilder,
     signers::local::PrivateKeySigner,
 };
 use alloy_chains::NamedChain;
 use cli::parse_cli_args;
 use logger::init_logging;
-use onchain::{
-    client::StrictNonceManager,
-    dapps::{ambient, bean, shmonad},
-    token::Token,
-};
+use onchain::{client::StrictNonceManager, dapps::hashflow::swap, token::Token};
 use rquest::{Client as RquestClient, Impersonate};
-use std::{str::FromStr, sync::Arc};
+use std::str::FromStr;
+use std::sync::Arc;
 
 mod cli;
 mod error;
@@ -23,21 +20,16 @@ mod onchain;
 
 pub use crate::error::{Error, Result};
 
-const POOL_IDX: U256 = U256::from_limbs([36000, 0, 0, 0]);
-
-const MAX_PRICE: U256 = U256::from_limbs([0x91d9f90d93d6b061, 0x100d73bf4fae6d4c, 0, 0]);
+const PK: &str = "";
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let cli = parse_cli_args();
     init_logging(&cli.log_level);
 
-    let signer = PrivateKeySigner::random();
+    let signer = PrivateKeySigner::from_str(PK).unwrap();
 
     let rpc_url = "https://testnet-rpc.monad.xyz".parse()?;
-    // let rpc_url = "https://base.drpc.org".parse()?;
-    // let rpc_url = "https://arbitrum.drpc.org".parse()?;
-    let provider = Arc::new(ProviderBuilder::new().wallet(wallet).on_http(rpc_url));
 
     let provider = Arc::new(
         ProviderBuilder::new()
@@ -51,20 +43,25 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         NamedChain::MonadTestnet.into(),
         Arc::clone(&provider),
     );
-    // let token_in = Address::ZERO;
-    let wmon = address!("0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701");
-    let token_out = address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea");
-    let amount: u64 = 125000000000039;
 
-    let ONE_MON = U256::from(1000000000000000000u64);
+    let token_in = Token::MON.address();
+    let token_out = address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea");
+
+    let ZERO_POINT_ONE_MON = U256::from(100000000000000000u64);
     let ONE_USDC = U256::from(1000000u64);
 
-    // let rquest_client = RquestClient::builder()
-    //     .impersonate(Impersonate::Chrome133)
-    //     .build()?;
+    let rquest_client = RquestClient::builder()
+        .impersonate(Impersonate::Chrome133)
+        .build()?;
 
-    // swap(&evm_client, rquest_client, token_in, token_out, amount).await?; // HASHFLOW OFF
-    // bridge(&evm_client, amount).await?; // GAZZIP ON
+    swap(
+        &evm_client,
+        rquest_client,
+        token_in,
+        token_out,
+        ZERO_POINT_ONE_MON,
+    )
+    .await?;
 
     Ok(())
 }

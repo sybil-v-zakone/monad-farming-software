@@ -5,8 +5,8 @@ use alloy::primitives::{Address, address};
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Token {
-    USDC,
     MON,
+    USDC,
     WMON,
     SHMON,
 }
@@ -14,8 +14,8 @@ pub enum Token {
 impl Token {
     pub const fn decimals(&self) -> u8 {
         match self {
-            Token::USDC => 6,
             Token::MON => 18,
+            Token::USDC => 6,
             Token::WMON => 18,
             Token::SHMON => 18,
         }
@@ -23,8 +23,8 @@ impl Token {
 
     pub const fn address(&self) -> Address {
         match self {
-            Token::USDC => address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea"),
             Token::MON => Address::ZERO,
+            Token::USDC => address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea"),
             Token::WMON => address!("0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701"),
             Token::SHMON => address!("0x3a98250F98Dd388C211206983453837C8365BDc1"),
         }
@@ -32,8 +32,8 @@ impl Token {
 
     pub const fn is_native(&self) -> bool {
         match self {
-            Token::USDC => false,
             Token::MON => true,
+            Token::USDC => false,
             Token::WMON => false,
             Token::SHMON => false,
         }
@@ -41,8 +41,8 @@ impl Token {
 
     pub fn ticker(&self) -> &'static str {
         match self {
-            Token::USDC => "USDC",
             Token::MON => "MON",
+            Token::USDC => "USDC",
             Token::WMON => "wMON",
             Token::SHMON => "shMON",
         }
