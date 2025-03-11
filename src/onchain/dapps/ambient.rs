@@ -15,6 +15,8 @@ use crate::onchain::client::Client;
 use crate::onchain::error::ClientError;
 use crate::onchain::token::Token;
 
+use super::common::{ONE_HUNDRED, SLIPPAGE};
+
 const IMPACT_CA: Address = address!("0x70a6a0C905af5737aD73Ceba4e6158e995031d4B");
 const DEX_CA: Address = address!("0x88B96aF200c8a9c35442C8AC6cd3D22695AaE4F0");
 const POOL_IDX: U256 = U256::from_limbs([36000, 0, 0, 0]);
@@ -29,6 +31,7 @@ const CALL_PATH: u16 = 1;
 enum Pool {
     MonUsdc,
     MonShmon,
+    UsdcShmon,
 }
 
 #[derive(Error, Debug)]
@@ -53,6 +56,7 @@ impl Pool {
         match self {
             Pool::MonUsdc => Token::USDC,
             Pool::MonShmon => Token::SHMON,
+            Pool::UsdcShmon => Token::USDC,
         }
     }
 
@@ -60,13 +64,15 @@ impl Pool {
         match self {
             Pool::MonUsdc => Token::MON,
             Pool::MonShmon => Token::MON,
+            Pool::UsdcShmon => Token::SHMON,
         }
     }
 
     fn from_tokens(token_a: Token, token_b: Token) -> Option<Self> {
         pool_match! { token_a, token_b;
             (MON, USDC) => MonUsdc,
-            (MON, SHMON) => MonShmon
+            (MON, SHMON) => MonShmon,
+            (USDC, SHMON) => UsdcShmon,
         }
     }
 }
@@ -171,7 +177,10 @@ where
         qty,
         limit_price,
     )
-    .await?;
+    .await?
+    .unsigned_abs();
+
+    let amount_out = amount_out * (100u128 - 1u128) / 100u128;
 
     let cmd = UserCmd {
         base: pool.base().address(),
@@ -182,7 +191,7 @@ where
         qty,
         tip: POOL_TIP,
         limitPrice: limit_price,
-        minOut: amount_out as u128,
+        minOut: amount_out,
         settleFlags: SETTLE_FLAGS,
     }
     .abi_encode();

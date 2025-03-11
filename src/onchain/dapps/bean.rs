@@ -13,6 +13,8 @@ use alloy::{
 use chrono::{Duration, Utc};
 use thiserror::Error;
 
+use super::common::{ONE_HUNDRED, SLIPPAGE};
+
 sol! {
     #[sol(rpc)]
     interface IBeanRouter {
@@ -72,7 +74,7 @@ where
         .nth(1)
         .ok_or(BeanError::AmountOutMissing)?;
 
-    Ok(amount_out)
+    Ok(amount_out * (ONE_HUNDRED - SLIPPAGE) / ONE_HUNDRED)
 }
 
 fn get_deadline() -> U256 {

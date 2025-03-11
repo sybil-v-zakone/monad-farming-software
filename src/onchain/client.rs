@@ -147,24 +147,16 @@ where
         Ok(true)
     }
 
-    /// Sends an ERC20 approval transaction if the current allowance is insufficient.
+    /// Approves a spender to transfer tokens if needed.
     ///
-    /// When `ignore_allowance` is true, the allowance check is skipped (treating the current allowance as zero),
-    /// forcing an approval transaction to be sent. When false, the function checks the existing allowance,
-    /// and only sends a transaction if it's less than the desired `amount`.
+    /// - Returns Ok(true) immediately if the token is native.
+    /// - If ignore_allowance is true, skips the allowance check.
+    /// - Sends an approval tx only if the current allowance is less than the requested amount.
     ///
-    /// # Arguments
+    /// # Errors
     ///
-    /// * `token_address` - The ERC20 token contract address.
-    /// * `spender` - The address to approve for spending tokens.
-    /// * `amount` - The token amount to approve.
-    /// * `ignore_allowance` - If true, bypasses the allowance check and sends the transaction; if false, only sends
-    ///                        the transaction if the current allowance is less than `amount`.
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(true)` if the transaction was sent or if no transaction was needed.
-    /// * An error if querying the allowance or sending the transaction fails.
+    /// Fails if the allowance query or the transaction fails.
+    #[tracing::instrument(skip_all)]
     pub async fn approve(
         &self,
         token: Token,
