@@ -47,14 +47,14 @@ where
             .map_err(Error::PendingTx)?;
 
         let status = receipt.status();
-        let tx_hash = format!("https://polygonscan.com/tx/{}", receipt.transaction_hash());
+        let tx_hash = format!("https://basescan.com/tx/{}", receipt.transaction_hash());
 
         match status {
             true => {
-                tracing::info!("Transaction successful: {tx_hash}")
+                println!("Transaction successful: {tx_hash}")
             }
             false => {
-                tracing::error!("Transaction failed: {tx_hash}")
+                println!("Transaction failed: {tx_hash}")
             }
         }
 
