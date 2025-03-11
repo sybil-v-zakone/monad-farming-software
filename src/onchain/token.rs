@@ -9,6 +9,7 @@ pub enum Token {
     USDC,
     WMON,
     SHMON,
+    APRMON,
 }
 
 impl Token {
@@ -18,6 +19,7 @@ impl Token {
             Token::USDC => 6,
             Token::WMON => 18,
             Token::SHMON => 18,
+            Token::APRMON => 18,
         }
     }
 
@@ -27,6 +29,7 @@ impl Token {
             Token::USDC => address!("0xf817257fed379853cde0fa4f97ab987181b1e5ea"),
             Token::WMON => address!("0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701"),
             Token::SHMON => address!("0x3a98250F98Dd388C211206983453837C8365BDc1"),
+            Token::APRMON => address!("0xb2f82D0f38dc453D596Ad40A37799446Cc89274A"),
         }
     }
 
@@ -36,6 +39,7 @@ impl Token {
             Token::USDC => false,
             Token::WMON => false,
             Token::SHMON => false,
+            Token::APRMON => false,
         }
     }
 
@@ -45,6 +49,7 @@ impl Token {
             Token::USDC => "USDC",
             Token::WMON => "wMON",
             Token::SHMON => "shMON",
+            Token::APRMON => "aprMON",
         }
     }
 }

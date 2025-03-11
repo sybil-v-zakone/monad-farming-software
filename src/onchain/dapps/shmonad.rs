@@ -1,6 +1,6 @@
 use crate::{
     Result,
-    onchain::{client::Client, token::Token},
+    onchain::{client::Client as EvmClient, token::Token},
 };
 use alloy::{
     network::{Ethereum, TransactionBuilder},
@@ -17,7 +17,7 @@ sol! {
     }
 }
 
-pub async fn deposit<P>(client: &Client<P>, amount: U256) -> Result<bool>
+pub async fn deposit<P>(client: &EvmClient<P>, amount: U256) -> Result<bool>
 where
     P: Provider<Ethereum>,
 {

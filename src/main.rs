@@ -8,7 +8,7 @@ use alloy::{
 use alloy_chains::NamedChain;
 use cli::parse_cli_args;
 use logger::init_logging;
-use onchain::{client::StrictNonceManager, dapps::hashflow::swap, token::Token};
+use onchain::{client::StrictNonceManager, token::Token};
 use rquest::{Client as RquestClient, Impersonate};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -53,15 +53,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let rquest_client = RquestClient::builder()
         .impersonate(Impersonate::Chrome133)
         .build()?;
-
-    swap(
-        &evm_client,
-        rquest_client,
-        token_in,
-        token_out,
-        ZERO_POINT_ONE_MON,
-    )
-    .await?;
 
     Ok(())
 }

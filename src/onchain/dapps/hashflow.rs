@@ -148,8 +148,6 @@ async fn get_quote(
         }],
     };
 
-    println!("{:?}", req);
-
     let res = rquest_client
         .post("https://api.hashflow.com/client/v3/rfq")
         .headers(headers)
