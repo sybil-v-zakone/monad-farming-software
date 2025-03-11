@@ -17,7 +17,7 @@ sol! {
     }
 }
 
-pub async fn deposit<P>(client: &EvmClient<P>, amount: U256) -> Result<bool>
+pub async fn deposit<P>(evm_client: &EvmClient<P>, amount: U256) -> Result<bool>
 where
     P: Provider<Ethereum>,
 {
@@ -25,12 +25,12 @@ where
         .with_input(
             Iapriori::depositCall {
                 assets: amount,
-                receiver: client.signer.address(),
+                receiver: evm_client.signer.address(),
             }
             .abi_encode(),
         )
         .with_to(Token::APRMON.address())
         .with_value(amount);
 
-    client.send_transaction(tx, None).await
+    evm_client.send_transaction(tx, None).await
 }
