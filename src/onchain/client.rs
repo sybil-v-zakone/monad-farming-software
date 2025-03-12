@@ -137,10 +137,10 @@ where
 
         match status {
             true => {
-                println!("Transaction successful: {tx_hash}")
+                tracing::info!("Transaction successful: {tx_hash}")
             }
             false => {
-                println!("Transaction failed: {tx_hash}")
+                tracing::error!("Transaction failed: {tx_hash}")
             }
         }
 

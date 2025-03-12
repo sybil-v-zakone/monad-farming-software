@@ -12,7 +12,7 @@ use alloy::{
 };
 
 sol! {
-    interface Iapriori {
+    interface IApriori {
         function deposit(uint256 assets, address receiver) external payable returns (uint256);
     }
 }
@@ -23,7 +23,7 @@ where
 {
     let tx = TransactionRequest::default()
         .with_input(
-            Iapriori::depositCall {
+            IApriori::depositCall {
                 assets: amount,
                 receiver: evm_client.signer.address(),
             }

@@ -17,8 +17,5 @@ pub enum Error {
     Ambient(#[from] AmbientError),
 
     #[error(transparent)]
-    Gaszip(#[from] GaszipError),
-
-    #[error(transparent)]
     FromUintToU128(#[from] FromUintError<u128>),
 }

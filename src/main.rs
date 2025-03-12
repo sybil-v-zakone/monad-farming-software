@@ -13,12 +13,12 @@ use rquest::{Client as RquestClient, Impersonate};
 use std::str::FromStr;
 use std::sync::Arc;
 
+pub use crate::error::{Error, Result};
+
 mod cli;
 mod error;
 mod logger;
 mod onchain;
-
-pub use crate::error::{Error, Result};
 
 const PK: &str = "";
 
