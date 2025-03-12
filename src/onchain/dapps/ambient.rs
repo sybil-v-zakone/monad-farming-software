@@ -15,8 +15,6 @@ use crate::onchain::client::Client;
 use crate::onchain::error::ClientError;
 use crate::onchain::token::Token;
 
-use super::common::{ONE_HUNDRED, SLIPPAGE};
-
 const IMPACT_CA: Address = address!("0x70a6a0C905af5737aD73Ceba4e6158e995031d4B");
 const DEX_CA: Address = address!("0x88B96aF200c8a9c35442C8AC6cd3D22695AaE4F0");
 const POOL_IDX: U256 = U256::from_limbs([36000, 0, 0, 0]);
@@ -152,7 +150,6 @@ where
 async fn build_cmd_data<P>(
     client: &Client<P>,
     token_in: &Token,
-    token_out: &Token,
     pool: Pool,
     amount: U256,
 ) -> Result<Vec<u8>>
@@ -219,7 +216,7 @@ where
 
     let pool = Pool::from_tokens(token_in, token_out)
         .ok_or(AmbientError::UnsupportedTokens(token_in, token_out))?;
-    let cmd = build_cmd_data(client, &token_in, &token_out, pool, amount_in).await?;
+    let cmd = build_cmd_data(client, &token_in, pool, amount_in).await?;
     let value = match token_in.is_native() {
         true => amount_in,
         false => U256::ZERO,

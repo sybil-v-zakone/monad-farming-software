@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::onchain::error::ClientError;
 use crate::{Result, onchain::client::Client as EvmClient};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Request {
     base_chain: RequestChain,
@@ -23,11 +23,11 @@ struct Request {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct RequestChain {
-    chain_type: String,
     chain_id: u32,
+    chain_type: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RequestRfq {
     base_token: Address,
@@ -125,7 +125,7 @@ async fn get_quote(
     rquest_client: RquestClient,
     token_in: Address,
     token_out: Address,
-    amount: u64,
+    amount_in: U256,
     trader: Address,
 ) -> Result<Quote> {
     let mut headers = header::HeaderMap::new();
@@ -143,7 +143,7 @@ async fn get_quote(
         rfqs: vec![RequestRfq {
             base_token: token_in,
             quote_token: token_out,
-            base_token_amount: amount.to_string(),
+            base_token_amount: amount_in.to_string(),
             trader,
         }],
     };
@@ -160,41 +160,6 @@ async fn get_quote(
         .map_err(ClientError::Request)?;
 
     Ok(res.quotes.into_iter().next().unwrap())
-}
-
-pub async fn swap<P>(
-    evm_client: &EvmClient<P>,
-    rquest_client: RquestClient,
-    token_in: Address,
-    token_out: Address,
-    amount: u64,
-) -> Result<bool>
-where
-    P: Provider<Ethereum>,
-{
-    let quote = get_quote(
-        rquest_client,
-        token_in,
-        token_out,
-        amount,
-        evm_client.signer.address(),
-    )
-    .await?;
-
-    let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
-
-    let tx_req = contract
-        .tradeRFQT(RFQTQuote::new_from_quote(
-            quote,
-            evm_client.signer.address(),
-            token_in,
-            token_out,
-            U256::from(amount),
-        )?)
-        .value(U256::from(amount))
-        .into_transaction_request();
-
-    evm_client.send_transaction(tx_req, None).await
 }
 
 impl RFQTQuote {
@@ -224,4 +189,39 @@ impl RFQTQuote {
                 .into(),
         })
     }
+}
+
+pub async fn swap<P>(
+    evm_client: &EvmClient<P>,
+    rquest_client: RquestClient,
+    token_in: Address,
+    token_out: Address,
+    amount_in: U256,
+) -> Result<bool>
+where
+    P: Provider<Ethereum>,
+{
+    let quote = get_quote(
+        rquest_client,
+        token_in,
+        token_out,
+        amount_in,
+        evm_client.signer.address(),
+    )
+    .await?;
+
+    let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
+
+    let tx_req = contract
+        .tradeRFQT(RFQTQuote::new_from_quote(
+            quote,
+            evm_client.signer.address(),
+            token_in,
+            token_out,
+            amount_in,
+        )?)
+        .value(amount_in)
+        .into_transaction_request();
+
+    evm_client.send_transaction(tx_req, None).await
 }

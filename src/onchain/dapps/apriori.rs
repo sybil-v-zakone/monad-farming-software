@@ -12,7 +12,7 @@ use alloy::{
 };
 
 sol! {
-    interface IShmonad {
+    interface IApriori {
         function deposit(uint256 assets, address receiver) external payable returns (uint256);
     }
 }
@@ -23,13 +23,13 @@ where
 {
     let tx = TransactionRequest::default()
         .with_input(
-            IShmonad::depositCall {
+            IApriori::depositCall {
                 assets: amount,
                 receiver: evm_client.signer.address(),
             }
             .abi_encode(),
         )
-        .with_to(Token::SHMON.address())
+        .with_to(Token::APRMON.address())
         .with_value(amount);
 
     evm_client.send_transaction(tx, None).await
