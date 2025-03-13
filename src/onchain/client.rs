@@ -39,39 +39,24 @@ where
     N: Default + ClientNonceManager<P>,
 {
     pub fn new(signer: PrivateKeySigner, chain: Chain, provider: P) -> Self {
-        Self {
-            chain,
-            provider,
-            signer,
-            nonce_manager: N::default(),
-        }
+        Self { chain, provider, signer, nonce_manager: N::default() }
     }
 
     async fn sign_tx_request(&self, tx: TransactionRequest) -> Result<TxEnvelope> {
-        let unsigned_tx = tx
-            .build_unsigned()
-            .map_err(|e| ClientError::UnbuiltTx(Box::new(e)))?;
+        let unsigned_tx = tx.build_unsigned().map_err(|e| ClientError::UnbuiltTx(Box::new(e)))?;
 
         match unsigned_tx {
             TypedTransaction::Legacy(mut t) => {
-                let sig = self
-                    .signer
-                    .sign_transaction(&mut t)
-                    .await
-                    .map_err(ClientError::Signer)?;
+                let sig =
+                    self.signer.sign_transaction(&mut t).await.map_err(ClientError::Signer)?;
                 Ok(t.into_signed(sig).into())
             }
             TypedTransaction::Eip1559(mut t) => {
-                let sig = self
-                    .signer
-                    .sign_transaction(&mut t)
-                    .await
-                    .map_err(ClientError::Signer)?;
+                let sig =
+                    self.signer.sign_transaction(&mut t).await.map_err(ClientError::Signer)?;
                 Ok(t.into_signed(sig).into())
             }
-            _ => Err(crate::Error::EvmClient(ClientError::UnexpectedTxType(
-                unsigned_tx.tx_type(),
-            ))),
+            _ => Err(crate::Error::EvmClient(ClientError::UnexpectedTxType(unsigned_tx.tx_type()))),
         }
     }
 
@@ -89,34 +74,21 @@ where
 
         match tx_type {
             TxType::Legacy => {
-                let gas_price = self
-                    .provider
-                    .get_gas_price()
-                    .await
-                    .map_err(ClientError::Rpc)?;
+                let gas_price = self.provider.get_gas_price().await.map_err(ClientError::Rpc)?;
                 tx.set_gas_price(gas_price);
             }
             TxType::Eip1559 => {
-                let fee = self
-                    .provider
-                    .estimate_eip1559_fees(None)
-                    .await
-                    .map_err(ClientError::Rpc)?;
+                let fee =
+                    self.provider.estimate_eip1559_fees(None).await.map_err(ClientError::Rpc)?;
                 tx.set_max_fee_per_gas(fee.max_fee_per_gas);
                 tx.set_max_priority_fee_per_gas(fee.max_priority_fee_per_gas);
             }
             _ => {
-                return Err(crate::Error::EvmClient(ClientError::UnexpectedTxType(
-                    tx_type,
-                )));
+                return Err(crate::Error::EvmClient(ClientError::UnexpectedTxType(tx_type)));
             }
         };
 
-        let gas = self
-            .provider
-            .estimate_gas(&tx)
-            .await
-            .map_err(ClientError::Rpc)?;
+        let gas = self.provider.estimate_gas(&tx).await.map_err(ClientError::Rpc)?;
         tx.set_gas_limit(gas);
 
         let envelope = self.sign_tx_request(tx).await?;
@@ -195,11 +167,8 @@ where
     }
 
     pub async fn sign_message(&self, message: &String) -> Result<String> {
-        let signature = self
-            .signer
-            .sign_message(message.as_bytes())
-            .await
-            .map_err(ClientError::Signer)?;
+        let signature =
+            self.signer.sign_message(message.as_bytes()).await.map_err(ClientError::Signer)?;
         let signature = encode_prefixed(signature.as_bytes());
         Ok(signature)
     }

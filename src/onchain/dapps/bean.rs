@@ -170,11 +170,7 @@ where
     P: Provider<Ethereum>,
 {
     let approved = match token_in.is_native() {
-        false => {
-            client
-                .approve(token_in, BEAN_ROUTER, amount_in, false)
-                .await?
-        }
+        false => client.approve(token_in, BEAN_ROUTER, amount_in, false).await?,
         true => true,
     };
 

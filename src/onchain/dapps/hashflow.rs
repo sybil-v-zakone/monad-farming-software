@@ -8,8 +8,10 @@ use alloy::{
 use rquest::{Client as RquestClient, header};
 use serde::{Deserialize, Serialize};
 
-use crate::onchain::error::ClientError;
-use crate::{Result, onchain::client::Client as EvmClient};
+use crate::{
+    Result,
+    onchain::{client::Client as EvmClient, error::ClientError},
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -131,10 +133,7 @@ async fn get_quote(
     let mut headers = header::HeaderMap::new();
     headers.insert("content-type", "application/json".parse().unwrap());
 
-    let request_chain = RequestChain {
-        chain_type: "evm".to_string(),
-        chain_id: 10143,
-    };
+    let request_chain = RequestChain { chain_type: "evm".to_string(), chain_id: 10143 };
 
     let req = Request {
         base_chain: request_chain.clone(),
@@ -184,9 +183,7 @@ impl RFQTQuote {
             quoteExpiry: U256::from(quote.quote_data.quote_expiry),
             nonce: U256::from(quote.quote_data.nonce),
             txid: FixedBytes::from_hex(quote.quote_data.txid).map_err(ClientError::FromHex)?,
-            signature: alloy::hex::decode(quote.signature)
-                .map_err(ClientError::FromHex)?
-                .into(),
+            signature: alloy::hex::decode(quote.signature).map_err(ClientError::FromHex)?.into(),
         })
     }
 }
@@ -201,14 +198,9 @@ pub async fn swap<P>(
 where
     P: Provider<Ethereum>,
 {
-    let quote = get_quote(
-        rquest_client,
-        token_in,
-        token_out,
-        amount_in,
-        evm_client.signer.address(),
-    )
-    .await?;
+    let quote =
+        get_quote(rquest_client, token_in, token_out, amount_in, evm_client.signer.address())
+            .await?;
 
     let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
 

@@ -4,3 +4,7 @@
 .vscode
 
 Cargo.lock
+
+database.sqlite
+
+.env

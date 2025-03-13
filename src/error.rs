@@ -1,7 +1,7 @@
 use alloy::primitives::ruint::FromUintError;
 use thiserror::Error;
 
-use crate::onchain::dapps::{ambient::AmbientError, bean::BeanError, gas_zip::GaszipError};
+use crate::onchain::dapps::{ambient::AmbientError, bean::BeanError};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -18,4 +18,10 @@ pub enum Error {
 
     #[error(transparent)]
     FromUintToU128(#[from] FromUintError<u128>),
+
+    #[error(transparent)]
+    DatabaseError(#[from] database::error::Error),
+
+    #[error(transparent)]
+    MenuError(#[from] dialoguer::Error),
 }
