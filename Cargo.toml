@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-thiserror = "2.0.12"
-tokio = { version = "1.43.0", features = ["full"] }
-alloy = { version = "0.11.1", features = ["full"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+alloy = { workspace = true }
 rquest = { version = "2.1.5", features = ["json", "cookies", "socks"] }
 serde = { version = "1.0.217", features = ["derive"] }
-tracing = "0.1.41"
+tracing = { workspace = true }
 tracing-subscriber = "0.3.19"
 alloy-chains = "0.1.64"
 chrono = "0.4.40"
@@ -20,3 +20,9 @@ database = { path = "./database" }
 
 [workspace]
 members = [".", "migration", "database"]
+
+[workspace.dependencies]
+thiserror = "2.0.12"
+alloy = { version = "0.11.1", features = ["full"] }
+tokio = { version = "1.43.0", features = ["full"] }
+tracing = "0.1.41"
