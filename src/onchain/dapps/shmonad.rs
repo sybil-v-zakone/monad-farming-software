@@ -23,11 +23,8 @@ where
 {
     let tx = TransactionRequest::default()
         .with_input(
-            IShmonad::depositCall {
-                assets: amount,
-                receiver: evm_client.signer.address(),
-            }
-            .abi_encode(),
+            IShmonad::depositCall { assets: amount, receiver: evm_client.signer.address() }
+                .abi_encode(),
         )
         .with_to(Token::SHMON.address())
         .with_value(amount);

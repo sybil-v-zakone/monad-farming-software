@@ -1,0 +1,23 @@
+[package]
+name = "database"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "database"
+path = "src/lib.rs"
+
+[dependencies]
+sea-orm = { version = "1.1.5", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+] }
+migration = { path = "../migration" }
+thiserror = "2.0.11"
+alloy = { version = "0.11.1", features = ["full"] }
+tokio = { version = "1.43.0", features = ["full"] }
+toml = "0.8.20"
+rand = "0.9.0"
+tracing = "0.1.41"
+async-trait = "0.1"

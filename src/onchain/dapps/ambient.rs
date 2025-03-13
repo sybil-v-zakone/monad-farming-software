@@ -1,6 +1,8 @@
-use alloy::network::TransactionBuilder;
-use alloy::primitives::{Address, U256, address};
-use alloy::rpc::types::TransactionRequest;
+use alloy::{
+    network::TransactionBuilder,
+    primitives::{Address, U256, address},
+    rpc::types::TransactionRequest,
+};
 
 use alloy::{
     network::Ethereum,
@@ -10,10 +12,10 @@ use alloy::{
 };
 use thiserror::Error;
 
-use crate::Result;
-use crate::onchain::client::Client;
-use crate::onchain::error::ClientError;
-use crate::onchain::token::Token;
+use crate::{
+    Result,
+    onchain::{client::Client, error::ClientError, token::Token},
+};
 
 const IMPACT_CA: Address = address!("0x70a6a0C905af5737aD73Ceba4e6158e995031d4B");
 const DEX_CA: Address = address!("0x88B96aF200c8a9c35442C8AC6cd3D22695AaE4F0");
@@ -165,17 +167,10 @@ where
 
     let qty = amount.try_into()?;
 
-    let amount_out = get_amount_out(
-        client,
-        pool.base(),
-        pool.quote(),
-        is_buy,
-        in_base_qty,
-        qty,
-        limit_price,
-    )
-    .await?
-    .unsigned_abs();
+    let amount_out =
+        get_amount_out(client, pool.base(), pool.quote(), is_buy, in_base_qty, qty, limit_price)
+            .await?
+            .unsigned_abs();
 
     let amount_out = amount_out * (100u128 - 1u128) / 100u128;
 
@@ -223,13 +218,7 @@ where
     };
 
     let tx = TransactionRequest::default()
-        .with_input(
-            Dex::userCmdCall {
-                callpath: CALL_PATH,
-                cmd: cmd.into(),
-            }
-            .abi_encode(),
-        )
+        .with_input(Dex::userCmdCall { callpath: CALL_PATH, cmd: cmd.into() }.abi_encode())
         .with_to(DEX_CA)
         .with_value(value);
 

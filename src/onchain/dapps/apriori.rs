@@ -23,11 +23,8 @@ where
 {
     let tx = TransactionRequest::default()
         .with_input(
-            IApriori::depositCall {
-                assets: amount,
-                receiver: evm_client.signer.address(),
-            }
-            .abi_encode(),
+            IApriori::depositCall { assets: amount, receiver: evm_client.signer.address() }
+                .abi_encode(),
         )
         .with_to(Token::APRMON.address())
         .with_value(amount);

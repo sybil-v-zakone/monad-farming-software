@@ -1,10 +1,11 @@
-use crate::onchain::client::Client as EvmClient;
-use crate::{Result, onchain::error::ClientError};
-use alloy::primitives::Address;
+use crate::{
+    Result,
+    onchain::{client::Client as EvmClient, error::ClientError},
+};
 use alloy::{
     hex::FromHexError,
     network::{Ethereum, TransactionBuilder},
-    primitives::{U256, address},
+    primitives::{Address, U256, address},
     providers::Provider,
     rpc::types::TransactionRequest,
 };
@@ -24,10 +25,8 @@ where
 {
     let call_data = alloy::hex::decode("0x0101b1").map_err(ClientError::FromHex)?;
 
-    let tx: TransactionRequest = TransactionRequest::default()
-        .with_input(call_data)
-        .to(GAS_ZIP_CA)
-        .with_value(amount_in);
+    let tx: TransactionRequest =
+        TransactionRequest::default().with_input(call_data).to(GAS_ZIP_CA).with_value(amount_in);
 
     evm_client.send_transaction(tx, None).await
 }
