@@ -3,7 +3,7 @@ use alloy::{
     hex,
     network::{Ethereum, UnbuiltTransactionError},
     primitives::ruint::ParseError,
-    providers::PendingTransactionError,
+    providers::{MulticallError, PendingTransactionError},
     transports::{RpcError as RpcErr, TransportErrorKind},
 };
 use thiserror::Error;
@@ -26,9 +26,6 @@ pub enum ClientError {
     FromHex(#[from] hex::FromHexError),
 
     #[error(transparent)]
-    Request(#[from] rquest::Error),
-
-    #[error(transparent)]
     UnbuiltTx(#[from] Box<UnbuiltTransactionError<Ethereum>>),
 
     #[error("tx type `{0}` is not supported")]
@@ -36,4 +33,7 @@ pub enum ClientError {
 
     #[error(transparent)]
     Contract(#[from] alloy::contract::Error),
+
+    #[error(transparent)]
+    Multicall(#[from] MulticallError),
 }

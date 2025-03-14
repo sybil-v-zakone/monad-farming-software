@@ -1,27 +1,30 @@
-use alloy::primitives::ruint::FromUintError;
 use thiserror::Error;
 
-use crate::onchain::dapps::{ambient::AmbientError, bean::BeanError};
+use crate::modules::warmup::error::WarmupError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    EvmClient(#[from] crate::onchain::error::ClientError),
-
-    #[error(transparent)]
-    Bean(#[from] BeanError),
-
-    #[error(transparent)]
-    Ambient(#[from] AmbientError),
-
-    #[error(transparent)]
-    FromUintToU128(#[from] FromUintError<u128>),
+    Warmup(#[from] WarmupError),
 
     #[error(transparent)]
     DatabaseError(#[from] database::error::Error),
 
+    // dep crates
+    #[error(transparent)]
+    Common(#[from] common::Error),
+
     #[error(transparent)]
     MenuError(#[from] dialoguer::Error),
+
+    #[error(transparent)]
+    Toml(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    UrlParse(#[from] url::ParseError),
 }

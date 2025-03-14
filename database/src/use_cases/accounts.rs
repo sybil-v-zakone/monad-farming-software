@@ -1,10 +1,10 @@
-use sea_orm::Set;
+use common::state::{Dex, Lending};
+use sea_orm::{DbErr, IntoActiveModel};
 
 use crate::{
     entity::{
         self,
-        account::Model as AccountModel,
-        impls::{account::AccountConditions, prelude::AccountList},
+        impls::{account::AccountConditions, prelude::*},
     },
     error::{Error, Result},
     repositories::{Repositories, account::AccountRepo},
@@ -21,7 +21,7 @@ pub async fn search<R: Repositories>(
 pub async fn search_account_by_id<R: Repositories>(repo: Arc<R>, id: i32) -> Result<AccountModel> {
     let accounts =
         repo.account().find_all(AccountConditions { id: Some(id), goal_reached: None }).await?;
-    accounts.into_iter().next().ok_or(Error::NotFound)
+    accounts.into_iter().next().ok_or(Error::Db(DbErr::RecordNotFound(format!("{id}"))))
 }
 
 pub async fn add<R: Repositories>(
@@ -37,12 +37,44 @@ pub async fn delete_all<R: Repositories>(repo: Arc<R>) -> Result<u64> {
 
 pub async fn deactivate_account_by_id<R: Repositories>(repo: Arc<R>, id: i32) -> Result<i32> {
     let accounts =
-        repo.account().find_all(AccountConditions { id: Some(id), goal_reached: None }).await?;
+        repo.account().find_all(AccountConditions { id: Some(id), ..Default::default() }).await?;
 
-    let account = accounts.into_iter().next().ok_or_else(|| Error::NotFound)?;
+    let mut account = accounts.into_iter().next().ok_or_else(|| Error::NotFound)?;
+    account.goal_reached = true;
 
-    let mut active_model = entity::account::ActiveModel::from(account);
-    active_model.goal_reached = Set(true);
+    let active_model = account.into_active_model();
+
+    repo.account().update(active_model).await
+}
+
+pub async fn update_swap_count<R: Repositories>(
+    repo: Arc<R>,
+    dex: Dex,
+    mut account: AccountModel,
+) -> Result<i32> {
+    match dex {
+        Dex::Ambient => account.current_ambient_swaps_count += 1,
+        Dex::Bean => account.current_bean_swaps_count += 1,
+        Dex::Hashflow => account.current_hashflow_swaps_count += 1,
+    };
+
+    let active_model = account.into_active_model();
+
+    repo.account().update(active_model).await
+}
+
+pub async fn update_deposit_count<R: Repositories>(
+    repo: Arc<R>,
+    lending: Lending,
+    mut account: AccountModel,
+) -> Result<i32> {
+    match lending {
+        Lending::Apriori => account.current_apriori_deposit_count += 1,
+        Lending::Kinza => account.current_kinza_deposit_count += 1,
+        Lending::Shmonad => account.current_shmonad_deposit_count += 1,
+    };
+
+    let active_model = account.into_active_model();
 
     repo.account().update(active_model).await
 }

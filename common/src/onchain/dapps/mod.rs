@@ -1,7 +1,7 @@
 pub mod ambient;
 pub mod apriori;
 pub mod bean;
-mod common;
+pub mod common;
 pub mod gas_zip;
 pub mod hashflow;
 pub mod kinza;

@@ -6,6 +6,16 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("Account not found")]
+    NotFound,
+
+    #[error(transparent)]
+    Request(#[from] rquest::Error),
+
+    #[error(transparent)]
+    Common(#[from] common::Error),
+
+    // external
     #[error(transparent)]
     LocalSigner(#[from] LocalSignerError),
 
@@ -17,7 +27,4 @@ pub enum Error {
 
     #[error(transparent)]
     Toml(#[from] toml::de::Error),
-
-    #[error("Entity not found")]
-    NotFound,
 }

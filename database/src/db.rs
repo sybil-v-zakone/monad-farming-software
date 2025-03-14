@@ -3,9 +3,9 @@ use crate::{
     error::{Error, Result},
     repositories::RepoImpls,
     use_cases::accounts,
-    utils::{fs::read_lines, random::random_in_range},
 };
 use alloy::signers::local::PrivateKeySigner;
+use common::utils::{fs::read_lines, random::random_in_range};
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database, DbConn};
 use std::{str::FromStr, sync::Arc};

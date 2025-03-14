@@ -7,22 +7,28 @@ edition = "2024"
 thiserror = { workspace = true }
 tokio = { workspace = true }
 alloy = { workspace = true }
-rquest = { version = "2.1.5", features = ["json", "cookies", "socks"] }
-serde = { version = "1.0.217", features = ["derive"] }
+rquest = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = "0.3.19"
-alloy-chains = "0.1.64"
-chrono = "0.4.40"
+alloy-chains = { workspace = true }
+serde = { workspace = true }
 clap = { version = "4.5.32", features = ["derive"] }
 dialoguer = "0.11.0"
-
 database = { path = "./database" }
+toml = "0.8.20"
+common = { path = "./common" }
+rand = { workspace = true }
+url = "2.5.4"
 
 [workspace]
-members = [".", "migration", "database"]
+members = [".", "migration", "database", "common"]
 
 [workspace.dependencies]
 thiserror = "2.0.12"
 alloy = { version = "0.11.1", features = ["full"] }
 tokio = { version = "1.43.0", features = ["full"] }
 tracing = "0.1.41"
+rquest = { version = "2.1.5", features = ["json", "cookies", "socks"] }
+alloy-chains = "0.1.64"
+serde = { version = "1.0.217", features = ["derive"] }
+rand = "0.9.0"

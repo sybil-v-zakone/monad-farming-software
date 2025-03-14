@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Result,
-    onchain::{client::Client as EvmClient, error::ClientError},
+    onchain::{client::Client as EvmClient, error::ClientError, token::Token},
 };
 
 #[derive(Debug, Serialize)]
@@ -54,12 +54,7 @@ pub struct Quote {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct QuoteData {
-    base_token: Address,
-    quote_token: Address,
-    base_token_amount: String,
     quote_token_amount: String,
-    trader: Address,
-    effective_trader: Address,
     pool: Address,
     txid: String,
     nonce: u64,
@@ -152,11 +147,9 @@ async fn get_quote(
         .headers(headers)
         .json(&req)
         .send()
-        .await
-        .map_err(ClientError::Request)?
+        .await?
         .json::<Response>()
-        .await
-        .map_err(ClientError::Request)?;
+        .await?;
 
     Ok(res.quotes.into_iter().next().unwrap())
 }
@@ -165,8 +158,8 @@ impl RFQTQuote {
     pub fn new_from_quote(
         quote: Quote,
         trader: Address,
-        token_in: Address,
-        token_out: Address,
+        token_in: Token,
+        token_out: Token,
         amount: U256,
     ) -> Result<Self> {
         Ok(Self {
@@ -174,8 +167,8 @@ impl RFQTQuote {
             externalAccount: Address::ZERO,
             trader,
             effectiveTrader: trader,
-            baseToken: token_in,
-            quoteToken: token_out,
+            baseToken: token_in.address(),
+            quoteToken: token_out.address(),
             effectiveBaseTokenAmount: amount,
             baseTokenAmount: amount,
             quoteTokenAmount: U256::from_str_radix(&quote.quote_data.quote_token_amount, 10)
@@ -191,16 +184,21 @@ impl RFQTQuote {
 pub async fn swap<P>(
     evm_client: &EvmClient<P>,
     rquest_client: RquestClient,
-    token_in: Address,
-    token_out: Address,
+    token_in: Token,
+    token_out: Token,
     amount_in: U256,
 ) -> Result<bool>
 where
     P: Provider<Ethereum>,
 {
-    let quote =
-        get_quote(rquest_client, token_in, token_out, amount_in, evm_client.signer.address())
-            .await?;
+    let quote = get_quote(
+        rquest_client,
+        token_in.address(),
+        token_out.address(),
+        amount_in,
+        evm_client.signer.address(),
+    )
+    .await?;
 
     let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
 
