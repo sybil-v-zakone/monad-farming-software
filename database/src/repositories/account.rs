@@ -1,16 +1,15 @@
 use crate::{
     entity,
     entity::{
-        impls::{
-            account::AccountConditions,
-            prelude::{AccountActiveModel, AccountList},
-        },
+        impls::{account::AccountConditions, prelude::*},
         prelude::Account,
     },
     error::Result,
 };
 use async_trait::async_trait;
-use sea_orm::{ColumnTrait, Condition, DbConn, EntityTrait, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DbConn, EntityTrait, IntoActiveModel, QueryFilter,
+};
 
 pub struct AccountRepoImpl {
     pub conn: DbConn,
@@ -21,7 +20,7 @@ pub trait AccountRepo {
     async fn find_all(&self, filter: AccountConditions) -> Result<AccountList>;
     async fn add(&self, account: AccountActiveModel) -> Result<i32>;
     async fn delete_all(&self) -> Result<u64>;
-    async fn update(&self, account: AccountActiveModel) -> Result<i32>;
+    async fn update(&self, account: AccountModel) -> Result<AccountActiveModel>;
 }
 
 #[async_trait]
@@ -50,12 +49,10 @@ impl AccountRepo for AccountRepoImpl {
         Ok(result.rows_affected)
     }
 
-    async fn update(&self, account: AccountActiveModel) -> Result<i32> {
-        let result = Account::update(account.clone())
-            .filter(entity::account::Column::Id.eq(account.id.unwrap()))
-            .exec(&self.conn)
-            .await?;
+    async fn update(&self, account: AccountModel) -> Result<AccountActiveModel> {
+        let active_model = account.into_active_model();
+        let res = active_model.save(&self.conn).await?;
 
-        Ok(result.id)
+        Ok(res)
     }
 }

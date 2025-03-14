@@ -1,5 +1,5 @@
 use common::state::{Dex, Lending};
-use sea_orm::{DbErr, IntoActiveModel};
+use sea_orm::DbErr;
 
 use crate::{
     entity::{
@@ -35,46 +35,43 @@ pub async fn delete_all<R: Repositories>(repo: Arc<R>) -> Result<u64> {
     repo.account().delete_all().await
 }
 
-pub async fn deactivate_account_by_id<R: Repositories>(repo: Arc<R>, id: i32) -> Result<i32> {
+pub async fn deactivate_account_by_id<R: Repositories>(
+    repo: Arc<R>,
+    id: i32,
+) -> Result<AccountActiveModel> {
     let accounts =
         repo.account().find_all(AccountConditions { id: Some(id), ..Default::default() }).await?;
 
     let mut account = accounts.into_iter().next().ok_or_else(|| Error::NotFound)?;
     account.goal_reached = true;
 
-    let active_model = account.into_active_model();
-
-    repo.account().update(active_model).await
+    repo.account().update(account).await
 }
 
 pub async fn update_swap_count<R: Repositories>(
     repo: Arc<R>,
     dex: Dex,
     mut account: AccountModel,
-) -> Result<i32> {
+) -> Result<AccountActiveModel> {
     match dex {
         Dex::Ambient => account.current_ambient_swaps_count += 1,
         Dex::Bean => account.current_bean_swaps_count += 1,
         Dex::Hashflow => account.current_hashflow_swaps_count += 1,
     };
 
-    let active_model = account.into_active_model();
-
-    repo.account().update(active_model).await
+    repo.account().update(account).await
 }
 
 pub async fn update_deposit_count<R: Repositories>(
     repo: Arc<R>,
     lending: Lending,
     mut account: AccountModel,
-) -> Result<i32> {
+) -> Result<AccountActiveModel> {
     match lending {
         Lending::Apriori => account.current_apriori_deposit_count += 1,
         Lending::Kinza => account.current_kinza_deposit_count += 1,
         Lending::Shmonad => account.current_shmonad_deposit_count += 1,
     };
 
-    let active_model = account.into_active_model();
-
-    repo.account().update(active_model).await
+    repo.account().update(account).await
 }
