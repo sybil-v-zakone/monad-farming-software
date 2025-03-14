@@ -25,4 +25,7 @@ pub enum Error {
 
     #[error(transparent)]
     Request(#[from] rquest::Error),
+
+    #[error(transparent)]
+    Toml(#[from] toml::de::Error),
 }

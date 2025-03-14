@@ -13,6 +13,7 @@ use database::{
 };
 
 use common::{
+    config::Config,
     onchain::client::{Client as EvmClient, StrictNonceManager},
     utils::random::random_in_range,
 };
@@ -23,7 +24,7 @@ use swap::swap;
 use tokio::task::JoinSet;
 use url::Url;
 
-use crate::{Result, config::Config};
+use crate::Result;
 
 pub mod error;
 mod lending;

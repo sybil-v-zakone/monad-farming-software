@@ -1,4 +1,5 @@
-use crate::{Result, config::Config};
+use crate::Result;
+use common::config::Config;
 use database::{db::generate, repositories::create_repositories};
 use dialoguer::{Select, theme::ColorfulTheme};
 use std::sync::Arc;

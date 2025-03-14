@@ -15,7 +15,7 @@ serde = { workspace = true }
 clap = { version = "4.5.32", features = ["derive"] }
 dialoguer = "0.11.0"
 database = { path = "./database" }
-toml = "0.8.20"
+
 common = { path = "./common" }
 rand = { workspace = true }
 url = "2.5.4"

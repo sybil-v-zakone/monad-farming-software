@@ -14,3 +14,4 @@ tracing = { workspace = true }
 chrono = "0.4.40"
 serde = { workspace = true }
 rquest = { workspace = true }
+toml = "0.8.20"

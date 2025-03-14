@@ -20,9 +20,6 @@ pub enum Error {
     MenuError(#[from] dialoguer::Error),
 
     #[error(transparent)]
-    Toml(#[from] toml::de::Error),
-
-    #[error(transparent)]
     Io(#[from] std::io::Error),
 
     #[error(transparent)]

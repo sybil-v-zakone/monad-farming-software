@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use alloy::{network::Ethereum, primitives::U256, providers::Provider};
 use common::{
+    config::Config,
     onchain::{
         client::Client as EvmClient,
         dapps::{ambient, bean, common::ONE_HUNDRED, hashflow},
@@ -13,7 +14,7 @@ use common::{
 use database::entity::impls::prelude::AccountModel;
 use rand::seq::IndexedRandom;
 
-use crate::{Result, config::Config};
+use crate::Result;
 
 use super::error::WarmupError;
 

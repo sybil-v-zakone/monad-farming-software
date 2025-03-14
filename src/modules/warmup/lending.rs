@@ -3,6 +3,7 @@ use std::sync::Arc;
 use alloy::{network::Ethereum, primitives::U256, providers::Provider};
 use common::{
     Error as CommonError,
+    config::Config,
     onchain::{
         client::Client as EvmClient,
         dapps::{apriori, common::ONE_HUNDRED, kinza, shmonad},
@@ -12,7 +13,7 @@ use common::{
     utils::random::random_in_range,
 };
 
-use crate::{Error, Result, config::Config};
+use crate::{Error, Result};
 
 pub async fn deposit<P>(
     lending: Lending,

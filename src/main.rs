@@ -5,7 +5,6 @@ use modules::menu;
 pub use crate::error::{Error, Result};
 
 mod cli;
-mod config;
 mod error;
 mod logger;
 mod modules;
