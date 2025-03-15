@@ -1,21 +1,22 @@
+use crate::Result;
 use alloy::{
     network::Ethereum,
     providers::{Provider, ProviderBuilder, RootProvider},
 };
 use alloy_chains::NamedChain;
+use common::{
+    config::Config,
+    onchain::client::{Client as EvmClient, StrictNonceManager},
+    utils::random::random_in_range,
+};
 use database::{
+    entity::account::ActiveModel,
     entity::impls::{
         account::{AccountAction, AccountConditions},
         prelude::*,
     },
     repositories::RepoImpls,
     use_cases::accounts,
-};
-
-use common::{
-    config::Config,
-    onchain::client::{Client as EvmClient, StrictNonceManager},
-    utils::random::random_in_range,
 };
 use error::WarmupError;
 use lending::deposit;
@@ -24,8 +25,6 @@ use std::{str::FromStr, sync::Arc, time::Duration};
 use swap::swap;
 use tokio::task::JoinSet;
 use url::Url;
-
-use crate::Result;
 
 pub mod error;
 mod lending;
@@ -123,6 +122,7 @@ where
 
     loop {
         let account = accounts::search_account_by_id(repo.clone(), account.id).await?;
+        let active_model = ActiveModel::from(account.clone());
 
         let action = account
             .random_available_action()
@@ -132,19 +132,23 @@ where
             AccountAction::Swap(dex) => {
                 // true -> update_swap_count
                 if swap(dex, &account, &evm_client, config.clone()).await? {
-                    accounts::update_swap_count(repo.clone(), dex, account).await?;
+                    accounts::update_swap_count(repo.clone(), dex, account, active_model).await?;
                 }
             }
             AccountAction::Lending(lending) => {
                 if deposit(lending, &evm_client, config.clone()).await? {
-                    accounts::update_deposit_count(repo.clone(), lending, account).await?;
+                    accounts::update_deposit_count(repo.clone(), lending, account, active_model)
+                        .await?;
                 }
             }
             AccountAction::Mint(nft) => {
                 if mint(nft, &account, &evm_client).await? {
-                    accounts::update_mint_count(repo.clone(), nft, account).await?;
+                    accounts::update_mint_count(repo.clone(), nft, account, active_model).await?;
                 }
             }
         }
+
+        let delay = random_in_range(config.action_delay) as u64;
+        tokio::time::sleep(Duration::from_secs(delay)).await;
     }
 }

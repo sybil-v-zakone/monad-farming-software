@@ -15,3 +15,4 @@ chrono = "0.4.40"
 serde = { workspace = true }
 rquest = { workspace = true }
 toml = "0.8.20"
+fake = { workspace = true }

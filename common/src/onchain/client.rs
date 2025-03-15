@@ -183,7 +183,7 @@ where
     pub async fn get_nonzero_token_balances(&self) -> Result<Vec<(Token, U256)>> {
         let mut builder = MulticallBuilder::new_dynamic(&self.provider);
 
-        for token in Token::iter().filter(|t| !t.is_native()) {
+        for token in Token::iter().filter(|t| !t.is_native() && t.is_swap_allow()) {
             let erc20 = IERC20::new(token.address(), &self.provider);
             builder = builder.add_dynamic(erc20.balanceOf(self.signer.address()));
         }

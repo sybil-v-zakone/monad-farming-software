@@ -26,6 +26,7 @@ pub struct NewActiveModelOptions {
     target_hashflow_swaps_count: u32,
     target_kinza_deposit_count: u32,
     target_shmonad_deposit_count: u32,
+    target_nad_domains_count: u32,
 }
 
 impl AccountActiveModel {
@@ -40,6 +41,7 @@ impl AccountActiveModel {
             target_hashflow_swaps_count: Set(opts.target_hashflow_swaps_count as i32),
             target_kinza_deposit_count: Set(opts.target_kinza_deposit_count as i32),
             target_shmonad_deposit_count: Set(opts.target_shmonad_deposit_count as i32),
+            target_nad_domains_count: Set(opts.target_nad_domains_count as i32),
             ..Default::default()
         }
     }

@@ -10,7 +10,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Result,
-    onchain::{client::Client as EvmClient, error::ClientError, token::Token},
+    onchain::{
+        client::Client as EvmClient, constants::MONAD_CHAIN_ID, error::ClientError, token::Token,
+    },
 };
 
 #[derive(Debug, Serialize)]
@@ -116,7 +118,7 @@ sol! {
     }
 }
 
-const HASHFLOW_CONTRACT_ADDRESS: Address = address!("0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1");
+const HASHFLOW_CA: Address = address!("0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1");
 const HASHFLOW_API_URL: &'static str = "https://api.hashflow.com/client/v3/rfq";
 
 async fn get_quote(
@@ -129,7 +131,7 @@ async fn get_quote(
     let mut headers = header::HeaderMap::new();
     headers.insert("content-type", "application/json".parse().unwrap());
 
-    let request_chain = RequestChain { chain_type: "evm".to_string(), chain_id: 10143 };
+    let request_chain = RequestChain { chain_type: "evm".to_string(), chain_id: MONAD_CHAIN_ID };
 
     let req = Request {
         base_chain: request_chain.clone(),
@@ -192,6 +194,15 @@ pub async fn swap<P>(
 where
     P: Provider<Ethereum>,
 {
+    let approved = match token_in.is_native() {
+        false => evm_client.approve(token_in, HASHFLOW_CA, amount_in, false).await?,
+        true => true,
+    };
+
+    if !approved {
+        return Ok(false);
+    }
+
     let quote = get_quote(
         rquest_client,
         token_in.address(),
@@ -201,7 +212,7 @@ where
     )
     .await?;
 
-    let contract = IHashflowRouter::new(HASHFLOW_CONTRACT_ADDRESS, &evm_client.provider);
+    let contract = IHashflowRouter::new(HASHFLOW_CA, &evm_client.provider);
 
     let tx_req = contract
         .tradeRFQT(RFQTQuote::new_from_quote(

@@ -1,6 +1,9 @@
 use crate::Result;
 use common::config::Config;
-use database::{db::generate, repositories::create_repositories};
+use database::{
+    db::{clear, generate},
+    repositories::create_repositories,
+};
 use dialoguer::{Select, theme::ColorfulTheme};
 use std::sync::Arc;
 
@@ -11,7 +14,7 @@ pub async fn menu() -> Result<()> {
     let config = Arc::new(Config::read_default().await);
 
     loop {
-        let options = vec!["DB: Generate", "Warmup", "Exit"];
+        let options = vec!["Generate DB", "Update DB", "Warmup", "Exit"];
 
         let selection = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Choice:")
@@ -21,8 +24,12 @@ pub async fn menu() -> Result<()> {
 
         match selection {
             0 => generate(Arc::clone(&repo), Arc::clone(&config)).await?,
-            1 => run_warmup(Arc::clone(&repo), Arc::clone(&config)).await?,
-            2 => return Ok(()),
+            1 => {
+                clear(Arc::clone(&repo)).await?;
+                generate(Arc::clone(&repo), Arc::clone(&config)).await?;
+            }
+            2 => run_warmup(Arc::clone(&repo), Arc::clone(&config)).await?,
+            3 => return Ok(()),
             _ => tracing::error!("Invalid selection"),
         }
     }
