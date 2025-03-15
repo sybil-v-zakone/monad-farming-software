@@ -23,3 +23,4 @@ tracing = { workspace = true }
 migration = { path = "../migration" }
 rquest = { workspace = true }
 common = { path = "../common" }
+derive_builder = "0.20.2"

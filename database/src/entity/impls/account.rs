@@ -1,6 +1,7 @@
 use crate::Result;
 use alloy::{primitives::Address, signers::local::PrivateKeySigner};
 use common::state::{Dex, Lending};
+use derive_builder::Builder;
 use rand::seq::IndexedRandom;
 use rquest::Impersonate;
 use sea_orm::Set;
@@ -14,29 +15,31 @@ pub struct AccountConditions {
     pub id: Option<i32>,
 }
 
+#[derive(Builder)]
+pub struct NewActiveModelOptions {
+    pk: String,
+    proxy: Option<String>,
+    address: String,
+    target_ambient_swaps_count: u32,
+    target_apriori_deposit_count: u32,
+    target_bean_swaps_count: u32,
+    target_hashflow_swaps_count: u32,
+    target_kinza_deposit_count: u32,
+    target_shmonad_deposit_count: u32,
+}
+
 impl AccountActiveModel {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        pk: String,
-        proxy: Option<String>,
-        address: String,
-        target_ambient_swaps_count: i32,
-        target_apriori_deposit_count: i32,
-        target_bean_swaps_count: i32,
-        target_hashflow_swaps_count: i32,
-        target_kinza_deposit_count: i32,
-        target_shmonad_deposit_count: i32,
-    ) -> Self {
+    pub fn new(opts: NewActiveModelOptions) -> Self {
         Self {
-            address: Set(address),
-            private_key: Set(pk),
-            proxy: Set(proxy),
-            target_ambient_swaps_count: Set(target_ambient_swaps_count),
-            target_apriori_deposit_count: Set(target_apriori_deposit_count),
-            target_bean_swaps_count: Set(target_bean_swaps_count),
-            target_hashflow_swaps_count: Set(target_hashflow_swaps_count),
-            target_kinza_deposit_count: Set(target_kinza_deposit_count),
-            target_shmonad_deposit_count: Set(target_shmonad_deposit_count),
+            address: Set(opts.address),
+            private_key: Set(opts.pk),
+            proxy: Set(opts.proxy),
+            target_ambient_swaps_count: Set(opts.target_ambient_swaps_count as i32),
+            target_apriori_deposit_count: Set(opts.target_apriori_deposit_count as i32),
+            target_bean_swaps_count: Set(opts.target_bean_swaps_count as i32),
+            target_hashflow_swaps_count: Set(opts.target_hashflow_swaps_count as i32),
+            target_kinza_deposit_count: Set(opts.target_kinza_deposit_count as i32),
+            target_shmonad_deposit_count: Set(opts.target_shmonad_deposit_count as i32),
             ..Default::default()
         }
     }

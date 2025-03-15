@@ -2,6 +2,8 @@ use alloy::signers::local::LocalSignerError;
 use sea_orm::DbErr;
 use thiserror::Error;
 
+use crate::entity::impls::account::NewActiveModelOptionsBuilderError;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Error)]
@@ -27,4 +29,7 @@ pub enum Error {
 
     #[error(transparent)]
     Toml(#[from] toml::de::Error),
+
+    #[error(transparent)]
+    NewAccountOpts(#[from] NewActiveModelOptionsBuilderError),
 }
