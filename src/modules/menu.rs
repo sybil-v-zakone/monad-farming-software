@@ -20,18 +20,7 @@ pub async fn menu() -> Result<()> {
             .interact()?;
 
         match selection {
-            0 => {
-                generate(
-                    Arc::clone(&repo),
-                    config.ambient_swap_count,
-                    config.hashflow_swap_count,
-                    config.bean_swap_count,
-                    config.apriori_deposit_count,
-                    config.kinza_deposit_count,
-                    config.shmonad_deposit_count,
-                )
-                .await?
-            }
+            0 => generate(Arc::clone(&repo), Arc::clone(&config)).await?,
             1 => run_warmup(Arc::clone(&repo), Arc::clone(&config)).await?,
             2 => return Ok(()),
             _ => tracing::error!("Invalid selection"),
