@@ -16,7 +16,7 @@ clap = { version = "4.5.32", features = ["derive"] }
 dialoguer = "0.11.0"
 rand = { workspace = true }
 url = "2.5.4"
-fake = { workspace = true }
+
 
 [workspace]
 members = [".", "migration", "database", "common"]
@@ -30,4 +30,3 @@ rquest = { version = "2.1.5", features = ["json", "cookies", "socks"] }
 alloy-chains = "0.1.64"
 serde = { version = "1.0.217", features = ["derive"] }
 rand = "0.9.0"
-fake = "4.0.0"

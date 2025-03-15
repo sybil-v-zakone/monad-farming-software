@@ -45,7 +45,7 @@ impl Token {
         }
     }
 
-    pub const fn is_swap_allow(&self) -> bool {
+    pub const fn is_swap_allowed(&self) -> bool {
         match self {
             Token::MON => true,
             Token::USDC => true,
@@ -67,7 +67,7 @@ impl Token {
 
     pub fn random_excluding(exclude: Token) -> Token {
         let mut rng = rand::rng();
-        Token::iter().filter(|&t| t != exclude && t.is_swap_allow()).choose(&mut rng).unwrap() // unless there are at least 2 enum variants the unwrap is safe
+        Token::iter().filter(|&t| t != exclude && t.is_swap_allowed()).choose(&mut rng).unwrap() // unless there are at least 2 enum variants the unwrap is safe
     }
 }
 

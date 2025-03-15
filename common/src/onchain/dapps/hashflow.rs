@@ -119,7 +119,7 @@ sol! {
 }
 
 const HASHFLOW_CA: Address = address!("0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1");
-const HASHFLOW_API_URL: &'static str = "https://api.hashflow.com/client/v3/rfq";
+const HASHFLOW_API_URL: &str = "https://api.hashflow.com/client/v3/rfq";
 
 async fn get_quote(
     rquest_client: RquestClient,
@@ -194,10 +194,7 @@ pub async fn swap<P>(
 where
     P: Provider<Ethereum>,
 {
-    let approved = match token_in.is_native() {
-        false => evm_client.approve(token_in, HASHFLOW_CA, amount_in, false).await?,
-        true => true,
-    };
+    let approved = evm_client.approve(token_in, HASHFLOW_CA, amount_in, false).await?;
 
     if !approved {
         return Ok(false);

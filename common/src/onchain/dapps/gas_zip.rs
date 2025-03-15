@@ -18,7 +18,7 @@ pub enum GaszipError {
 }
 
 const GAS_ZIP_CA: Address = address!("0x391E7C679d29bD940d63be94AD22A25d25b5A604");
-const CALL_DATA: &'static str = "0x0101b1";
+const CALL_DATA: &str = "0x0101b1";
 
 pub async fn bridge<P>(evm_client: &EvmClient<P>, amount_in: U256) -> Result<bool>
 where

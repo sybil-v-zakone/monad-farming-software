@@ -3,7 +3,6 @@ use crate::{
     onchain::{constants::MONAD_CHAIN_ID, error::ClientError},
 };
 use alloy::{
-    hex::FromHex,
     network::{Ethereum, TransactionBuilder},
     primitives::{Address, FixedBytes, U256, address},
     providers::Provider,
@@ -44,20 +43,19 @@ sol! {
     }
 }
 
-const ZERO_BYTES: &'static str =
-    "0x0000000000000000000000000000000000000000000000000000000000000000";
 const NAD_DOMAINS_CA: Address = address!("0x758D80767a751fc1634f579D76e1CcaAb3485c9c");
 
 fn get_valid_domain_name() -> String {
     let invalid_domain_name: String = Username().fake();
-    let domain_name = invalid_domain_name.replace("_", "");
-    domain_name
+    invalid_domain_name.replace("_", "")
 }
 
 pub async fn mint<P>(evm_client: &EvmClient<P>, http_client: RquestClient) -> Result<bool>
 where
     P: Provider<Ethereum>,
 {
+    let zero_bytes = FixedBytes::<32>::ZERO;
+
     let domain_name = get_valid_domain_name();
     let url = format!(
         "https://api.nad.domains/register/signature?name={0}&nameOwner={1}&setAsPrimaryName={2}&referrer={3}&discountKey={4}&discountClaimProof={5}&chainId={6}",
@@ -65,8 +63,8 @@ where
         evm_client.signer.address(),
         true,
         Address::ZERO,
-        ZERO_BYTES,
-        ZERO_BYTES,
+        zero_bytes,
+        zero_bytes,
         MONAD_CHAIN_ID
     );
 
@@ -80,10 +78,8 @@ where
                     nameOwner: evm_client.signer.address(),
                     setAsPrimaryName: true,
                     referrer: Address::ZERO,
-                    discountKey: FixedBytes::from_hex(ZERO_BYTES).map_err(ClientError::FromHex)?,
-                    discountClaimProof: alloy::hex::decode(ZERO_BYTES)
-                        .map_err(ClientError::FromHex)?
-                        .into(),
+                    discountKey: FixedBytes::ZERO,
+                    discountClaimProof: zero_bytes.into(),
                     nonce: res.nonce,
                     deadline: U256::from(res.deadline),
                 },
