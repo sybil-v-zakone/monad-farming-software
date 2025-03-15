@@ -7,11 +7,9 @@ edition = "2024"
 thiserror = { workspace = true }
 tokio = { workspace = true }
 alloy = { workspace = true }
-rquest = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = "0.3.19"
 alloy-chains = { workspace = true }
-serde = { workspace = true }
 clap = { version = "4.5.32", features = ["derive"] }
 dialoguer = "0.11.0"
 database = { path = "./database" }
