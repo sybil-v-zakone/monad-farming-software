@@ -10,8 +10,6 @@ pub async fn menu() -> Result<()> {
     let repo = Arc::new(create_repositories().await?);
     let config = Arc::new(Config::read_default().await);
 
-    let random_count_range: [u32; 2] = [1, 5];
-
     loop {
         let options = vec!["DB: Generate", "Warmup", "Exit"];
 
@@ -22,7 +20,18 @@ pub async fn menu() -> Result<()> {
             .interact()?;
 
         match selection {
-            0 => generate(Arc::clone(&repo), random_count_range).await?,
+            0 => {
+                generate(
+                    Arc::clone(&repo),
+                    config.ambient_swap_count,
+                    config.hashflow_swap_count,
+                    config.bean_swap_count,
+                    config.apriori_deposit_count,
+                    config.kinza_deposit_count,
+                    config.shmonad_deposit_count,
+                )
+                .await?
+            }
             1 => run_warmup(Arc::clone(&repo), Arc::clone(&config)).await?,
             2 => return Ok(()),
             _ => tracing::error!("Invalid selection"),

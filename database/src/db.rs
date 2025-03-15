@@ -24,7 +24,15 @@ pub async fn connect() -> Result<DbConn> {
     Ok(db)
 }
 
-pub async fn generate(repo: Arc<RepoImpls>, random_count_range: [u32; 2]) -> Result<()> {
+pub async fn generate(
+    repo: Arc<RepoImpls>,
+    ambient_swap_count: [u32; 2],
+    hashflow_swap_count: [u32; 2],
+    bean_swap_count: [u32; 2],
+    apriori_deposit_count: [u32; 2],
+    kinza_deposit_count: [u32; 2],
+    shmonad_deposit_count: [u32; 2],
+) -> Result<()> {
     const PRIVATE_KEYS_PATH: &str = "data/private_keys.txt";
     const PROXIES_PATH: &str = "data/proxies.txt";
 
@@ -41,18 +49,16 @@ pub async fn generate(repo: Arc<RepoImpls>, random_count_range: [u32; 2]) -> Res
             }
         };
 
-        let random_count = random_in_range(random_count_range);
-
         let opts = NewActiveModelOptionsBuilder::default()
             .pk(pk.to_string())
             .proxy(proxies_iter.next())
             .address(address.to_string())
-            .target_ambient_swaps_count(random_count)
-            .target_apriori_deposit_count(random_count)
-            .target_bean_swaps_count(random_count)
-            .target_hashflow_swaps_count(random_count)
-            .target_kinza_deposit_count(random_count)
-            .target_shmonad_deposit_count(random_count)
+            .target_ambient_swaps_count(random_in_range(ambient_swap_count))
+            .target_apriori_deposit_count(random_in_range(apriori_deposit_count))
+            .target_bean_swaps_count(random_in_range(bean_swap_count))
+            .target_hashflow_swaps_count(random_in_range(hashflow_swap_count))
+            .target_kinza_deposit_count(random_in_range(kinza_deposit_count))
+            .target_shmonad_deposit_count(random_in_range(shmonad_deposit_count))
             .build()?;
 
         let account = AccountActiveModel::new(opts);
