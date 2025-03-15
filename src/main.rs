@@ -8,7 +8,6 @@ mod cli;
 mod error;
 mod logger;
 mod modules;
-mod onchain;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

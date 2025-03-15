@@ -1,11 +1,12 @@
 use super::entity::impls::prelude::AccountActiveModel;
 use crate::{
+    entity::impls::account::NewActiveModelOptionsBuilder,
     error::{Error, Result},
     repositories::RepoImpls,
     use_cases::accounts,
-    utils::{fs::read_lines, random::random_in_range},
 };
 use alloy::signers::local::PrivateKeySigner;
+use common::utils::{fs::read_lines, random::random_in_range};
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database, DbConn};
 use std::{str::FromStr, sync::Arc};
@@ -42,17 +43,19 @@ pub async fn generate(repo: Arc<RepoImpls>, random_count_range: [u32; 2]) -> Res
 
         let random_count = random_in_range(random_count_range);
 
-        let account = AccountActiveModel::new(
-            pk.to_string(),
-            proxies_iter.next(),
-            address.to_string(),
-            random_count as i32,
-            random_count as i32,
-            random_count as i32,
-            random_count as i32,
-            random_count as i32,
-            random_count as i32,
-        );
+        let opts = NewActiveModelOptionsBuilder::default()
+            .pk(pk.to_string())
+            .proxy(proxies_iter.next())
+            .address(address.to_string())
+            .target_ambient_swaps_count(random_count)
+            .target_apriori_deposit_count(random_count)
+            .target_bean_swaps_count(random_count)
+            .target_hashflow_swaps_count(random_count)
+            .target_kinza_deposit_count(random_count)
+            .target_shmonad_deposit_count(random_count)
+            .build()?;
+
+        let account = AccountActiveModel::new(opts);
 
         if let Err(Error::Db(sea_orm::DbErr::Exec(rt_e))) =
             accounts::add(repo.clone(), account).await

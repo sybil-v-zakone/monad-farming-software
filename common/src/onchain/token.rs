@@ -1,9 +1,11 @@
 use std::fmt::Display;
 
 use alloy::primitives::{Address, address};
+use rand::seq::IteratorRandom;
+use strum::{EnumIter, IntoEnumIterator};
 
 #[allow(clippy::upper_case_acronyms)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, EnumIter, Eq, PartialOrd, Ord, Hash)]
 pub enum Token {
     MON,
     USDC,
@@ -51,6 +53,11 @@ impl Token {
             Token::SHMON => "shMON",
             Token::APRMON => "aprMON",
         }
+    }
+
+    pub fn random_excluding(exclude: Token) -> Token {
+        let mut rng = rand::rng();
+        Token::iter().filter(|&t| t != exclude).choose(&mut rng).unwrap() // unless there are at least 2 enum variants the unwrap is safe
     }
 }
 

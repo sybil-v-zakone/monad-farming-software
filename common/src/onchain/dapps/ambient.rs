@@ -79,7 +79,7 @@ impl Pool {
 
 sol! {
     #[sol(rpc)]
-    contract Dex {
+    interface IDex {
         function userCmd(uint16 callpath, bytes calldata cmd) external payable returns (bytes memory);
     }
 
@@ -218,7 +218,7 @@ where
     };
 
     let tx = TransactionRequest::default()
-        .with_input(Dex::userCmdCall { callpath: CALL_PATH, cmd: cmd.into() }.abi_encode())
+        .with_input(IDex::userCmdCall { callpath: CALL_PATH, cmd: cmd.into() }.abi_encode())
         .with_to(DEX_CA)
         .with_value(value);
 

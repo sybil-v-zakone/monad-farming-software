@@ -3,13 +3,14 @@ use alloy::{
     hex::encode_prefixed,
     network::{Ethereum, ReceiptResponse, TransactionBuilder, TxSigner},
     primitives::{Address, U256},
-    providers::Provider,
+    providers::{MulticallBuilder, Provider},
     rpc::types::TransactionRequest,
     signers::{Signer, local::PrivateKeySigner},
     sol,
     sol_types::SolCall,
 };
 use alloy_chains::Chain;
+use strum::IntoEnumIterator;
 
 use super::{error::ClientError, token::Token};
 use crate::Result;
@@ -20,6 +21,8 @@ sol! {
         function approve(address spender, uint256 amount) external returns (bool);
 
         function allowance(address owner, address spender) external view returns (uint256);
+
+        function balanceOf(address account) public view returns (uint256);
     }
 }
 
@@ -40,6 +43,10 @@ where
 {
     pub fn new(signer: PrivateKeySigner, chain: Chain, provider: P) -> Self {
         Self { chain, provider, signer, nonce_manager: N::default() }
+    }
+
+    pub fn address(&self) -> Address {
+        self.signer.address()
     }
 
     async fn sign_tx_request(&self, tx: TransactionRequest) -> Result<TxEnvelope> {
@@ -172,8 +179,32 @@ where
         let signature = encode_prefixed(signature.as_bytes());
         Ok(signature)
     }
+
+    pub async fn get_nonzero_token_balances(&self) -> Result<Vec<(Token, U256)>> {
+        let mut builder = MulticallBuilder::new_dynamic(&self.provider);
+
+        for token in Token::iter().filter(|t| !t.is_native()) {
+            let erc20 = IERC20::new(token.address(), &self.provider);
+            builder = builder.add_dynamic(erc20.balanceOf(self.signer.address()));
+        }
+
+        let token_balances = Token::iter()
+            .zip(
+                builder
+                    .aggregate()
+                    .await
+                    .map_err(ClientError::Multicall)?
+                    .into_iter()
+                    .map(|ret| ret._0),
+            )
+            .filter(|(_, bal)| *bal > U256::ZERO)
+            .collect::<Vec<_>>();
+
+        Ok(token_balances)
+    }
 }
 
+#[allow(async_fn_in_trait)]
 pub trait ClientNonceManager<P: Provider>: Default {
     async fn get_next_nonce(&self, client: &Client<P, Self>) -> Result<u64>;
 }
