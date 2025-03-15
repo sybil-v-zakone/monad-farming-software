@@ -19,6 +19,7 @@ use common::{
 };
 use error::WarmupError;
 use lending::deposit;
+use mint::mint;
 use std::{str::FromStr, sync::Arc, time::Duration};
 use swap::swap;
 use tokio::task::JoinSet;
@@ -28,6 +29,7 @@ use crate::Result;
 
 pub mod error;
 mod lending;
+mod mint;
 mod swap;
 
 pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()> {
@@ -136,6 +138,11 @@ where
             AccountAction::Lending(lending) => {
                 if deposit(lending, &evm_client, config.clone()).await? {
                     accounts::update_deposit_count(repo.clone(), lending, account).await?;
+                }
+            }
+            AccountAction::Mint(nft) => {
+                if mint(nft, &account, &evm_client).await? {
+                    accounts::update_mint_count(repo.clone(), nft, account).await?;
                 }
             }
         }

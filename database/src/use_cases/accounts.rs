@@ -1,4 +1,4 @@
-use common::state::{Dex, Lending};
+use common::state::{Dex, Lending, Nft};
 use sea_orm::DbErr;
 
 use crate::{
@@ -71,6 +71,18 @@ pub async fn update_deposit_count<R: Repositories>(
         Lending::Apriori => account.current_apriori_deposit_count += 1,
         Lending::Kinza => account.current_kinza_deposit_count += 1,
         Lending::Shmonad => account.current_shmonad_deposit_count += 1,
+    };
+
+    repo.account().update(account).await
+}
+
+pub async fn update_mint_count<R: Repositories>(
+    repo: Arc<R>,
+    nft: Nft,
+    mut account: AccountModel,
+) -> Result<AccountActiveModel> {
+    match nft {
+        Nft::NadDomains => account.current_nad_domains_count += 1,
     };
 
     repo.account().update(account).await

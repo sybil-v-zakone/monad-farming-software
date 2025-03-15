@@ -24,6 +24,8 @@ pub struct Model {
     pub target_kinza_deposit_count: i32,
     pub current_shmonad_deposit_count: i32,
     pub target_shmonad_deposit_count: i32,
+    pub current_nad_domains_count: i32,
+    pub target_nad_domains_count: i32,
     pub goal_reached: bool,
 }
 

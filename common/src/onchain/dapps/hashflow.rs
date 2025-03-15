@@ -117,6 +117,7 @@ sol! {
 }
 
 const HASHFLOW_CONTRACT_ADDRESS: Address = address!("0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc1");
+const HASHFLOW_API_URL: &'static str = "https://api.hashflow.com/client/v3/rfq";
 
 async fn get_quote(
     rquest_client: RquestClient,
@@ -143,7 +144,7 @@ async fn get_quote(
     };
 
     let res = rquest_client
-        .post("https://api.hashflow.com/client/v3/rfq")
+        .post(HASHFLOW_API_URL)
         .headers(headers)
         .json(&req)
         .send()
