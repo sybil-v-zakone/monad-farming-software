@@ -6,7 +6,10 @@ use crate::{
     use_cases::accounts,
 };
 use alloy::signers::local::PrivateKeySigner;
-use common::utils::{fs::read_lines, random::random_in_range};
+use common::{
+    config::Config,
+    utils::{fs::read_lines, random::random_in_range},
+};
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{ConnectOptions, Database, DbConn};
 use std::{str::FromStr, sync::Arc};
@@ -24,7 +27,7 @@ pub async fn connect() -> Result<DbConn> {
     Ok(db)
 }
 
-pub async fn generate(repo: Arc<RepoImpls>, random_count_range: [u32; 2]) -> Result<()> {
+pub async fn generate(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()> {
     const PRIVATE_KEYS_PATH: &str = "data/private_keys.txt";
     const PROXIES_PATH: &str = "data/proxies.txt";
 
@@ -41,18 +44,16 @@ pub async fn generate(repo: Arc<RepoImpls>, random_count_range: [u32; 2]) -> Res
             }
         };
 
-        let random_count = random_in_range(random_count_range);
-
         let opts = NewActiveModelOptionsBuilder::default()
             .pk(pk.to_string())
             .proxy(proxies_iter.next())
             .address(address.to_string())
-            .target_ambient_swaps_count(random_count)
-            .target_apriori_deposit_count(random_count)
-            .target_bean_swaps_count(random_count)
-            .target_hashflow_swaps_count(random_count)
-            .target_kinza_deposit_count(random_count)
-            .target_shmonad_deposit_count(random_count)
+            .target_ambient_swaps_count(random_in_range(config.ambient_swap_count))
+            .target_apriori_deposit_count(random_in_range(config.apriori_deposit_count))
+            .target_bean_swaps_count(random_in_range(config.bean_swap_count))
+            .target_hashflow_swaps_count(random_in_range(config.hashflow_swap_count))
+            .target_kinza_deposit_count(random_in_range(config.kinza_deposit_count))
+            .target_shmonad_deposit_count(random_in_range(config.shmonad_deposit_count))
             .build()?;
 
         let account = AccountActiveModel::new(opts);
