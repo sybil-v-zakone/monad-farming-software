@@ -10,7 +10,6 @@ use common::{
     utils::random::random_in_range,
 };
 use database::{
-    entity::account::ActiveModel,
     entity::impls::{
         account::{AccountAction, AccountConditions},
         prelude::*,
@@ -122,7 +121,6 @@ where
 
     loop {
         let account = accounts::search_account_by_id(repo.clone(), account.id).await?;
-        let active_model = ActiveModel::from(account.clone());
 
         let action = account
             .random_available_action()
@@ -132,18 +130,17 @@ where
             AccountAction::Swap(dex) => {
                 // true -> update_swap_count
                 if swap(dex, &account, &evm_client, config.clone()).await? {
-                    accounts::update_swap_count(repo.clone(), dex, account, active_model).await?;
+                    accounts::update_swap_count(repo.clone(), dex, &account).await?;
                 }
             }
             AccountAction::Lending(lending) => {
                 if deposit(lending, &evm_client, config.clone()).await? {
-                    accounts::update_deposit_count(repo.clone(), lending, account, active_model)
-                        .await?;
+                    accounts::update_deposit_count(repo.clone(), lending, &account).await?;
                 }
             }
             AccountAction::Mint(nft) => {
                 if mint(nft, &account, &evm_client).await? {
-                    accounts::update_mint_count(repo.clone(), nft, account, active_model).await?;
+                    accounts::update_mint_count(repo.clone(), nft, account).await?;
                 }
             }
         }

@@ -1,5 +1,8 @@
 use common::state::{Dex, Lending, Nft};
-use sea_orm::{ActiveValue::Set, DbErr};
+use sea_orm::{
+    ActiveValue::{self, Set},
+    DbErr,
+};
 
 use crate::{
     entity::{
@@ -28,6 +31,10 @@ pub async fn add<R: Repositories>(repo: Arc<R>, new_account: ActiveModel) -> Res
     repo.account().add(new_account).await
 }
 
+pub async fn update<R: Repositories>(repo: Arc<R>, account: AccountActiveModel) -> Result<i32> {
+    repo.account().update(account).await
+}
+
 pub async fn delete_all<R: Repositories>(repo: Arc<R>) -> Result<u64> {
     repo.account().delete_all().await
 }
@@ -46,31 +53,37 @@ pub async fn deactivate_account_by_id<R: Repositories>(repo: Arc<R>, id: i32) ->
 pub async fn update_swap_count<R: Repositories>(
     repo: Arc<R>,
     dex: Dex,
-    account: AccountModel,
-    mut active_model: AccountActiveModel,
+    account: &AccountModel,
 ) -> Result<i32> {
+    let mut active_model =
+        AccountActiveModel { id: ActiveValue::set(account.id), ..Default::default() };
+
     match dex {
         Dex::Ambient => {
-            active_model.current_ambient_swaps_count = Set(account.current_ambient_swaps_count + 1)
+            active_model.current_ambient_swaps_count =
+                ActiveValue::set(account.current_ambient_swaps_count + 1);
         }
         Dex::Bean => {
-            active_model.current_bean_swaps_count = Set(account.current_bean_swaps_count + 1)
+            active_model.current_bean_swaps_count =
+                ActiveValue::set(account.current_bean_swaps_count + 1)
         }
         Dex::Hashflow => {
             active_model.current_hashflow_swaps_count =
-                Set(account.current_hashflow_swaps_count + 1)
+                ActiveValue::set(account.current_hashflow_swaps_count + 1)
         }
-    };
+    }
 
-    repo.account().update(active_model).await
+    update(repo, active_model).await
 }
 
 pub async fn update_deposit_count<R: Repositories>(
     repo: Arc<R>,
     lending: Lending,
-    account: AccountModel,
-    mut active_model: AccountActiveModel,
+    account: &AccountModel,
 ) -> Result<i32> {
+    let mut active_model =
+        AccountActiveModel { id: ActiveValue::set(account.id), ..Default::default() };
+
     match lending {
         Lending::Apriori => {
             active_model.current_apriori_deposit_count =
@@ -92,8 +105,10 @@ pub async fn update_mint_count<R: Repositories>(
     repo: Arc<R>,
     nft: Nft,
     account: AccountModel,
-    mut active_model: AccountActiveModel,
 ) -> Result<i32> {
+    let mut active_model =
+        AccountActiveModel { id: ActiveValue::set(account.id), ..Default::default() };
+
     match nft {
         Nft::NadDomains => {
             active_model.current_kinza_deposit_count = Set(account.current_kinza_deposit_count + 1)
