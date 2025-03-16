@@ -22,6 +22,7 @@ pub struct Config {
     pub action_delay: [u64; 2],
     pub deposit_ratio: [u32; 2],
     pub swap_ratio: [u32; 2],
+    pub restart_thread_delay: u64,
     pub rpc_url: String,
 }
 

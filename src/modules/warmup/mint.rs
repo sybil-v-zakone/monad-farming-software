@@ -15,6 +15,8 @@ pub async fn mint<P>(
 where
     P: Provider<Ethereum>,
 {
+    tracing::info!("{platform} | Minting an NFT");
+
     let res = match platform {
         Nft::NadDomains => {
             let http_client = account.http_client()?;

@@ -179,26 +179,27 @@ where
         let signature = encode_prefixed(signature.as_bytes());
         Ok(signature)
     }
-
     pub async fn get_nonzero_token_balances(&self) -> Result<Vec<(Token, U256)>> {
-        let mut builder = MulticallBuilder::new_dynamic(&self.provider);
+        let tokens =
+            Token::iter().filter(|t| !t.is_native() && t.is_swap_allowed()).collect::<Vec<_>>();
 
-        for token in Token::iter().filter(|t| !t.is_native() && t.is_swap_allowed()) {
-            let erc20 = IERC20::new(token.address(), &self.provider);
-            builder = builder.add_dynamic(erc20.balanceOf(self.signer.address()));
-        }
+        let builder =
+            tokens.iter().fold(MulticallBuilder::new_dynamic(&self.provider), |builder, token| {
+                let erc20 = IERC20::new(token.address(), &self.provider);
+                builder.add_dynamic(erc20.balanceOf(self.signer.address()))
+            });
 
-        let token_balances = Token::iter()
-            .zip(
-                builder
-                    .aggregate()
-                    .await
-                    .map_err(ClientError::Multicall)?
-                    .into_iter()
-                    .map(|ret| ret._0),
-            )
+        let responses = builder.aggregate().await.map_err(ClientError::Multicall)?;
+
+        let mut token_balances = tokens
+            .into_iter()
+            .zip(responses.into_iter().map(|ret| ret._0))
             .filter(|(_, bal)| *bal > U256::ZERO)
             .collect::<Vec<_>>();
+
+        let mon_balance =
+            self.provider.get_balance(self.address()).await.map_err(ClientError::Rpc)?;
+        token_balances.push((Token::MON, mon_balance));
 
         Ok(token_balances)
     }
