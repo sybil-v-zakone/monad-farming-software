@@ -80,7 +80,10 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
                     accounts::deactivate_account_by_id(repo.clone(), id).await?;
                 }
                 _ => {
-                    tracing::error!("Thread stopped with error: {e}, restarting a thread");
+                    tracing::error!(
+                        "Thread stopped with error: {e}, restarting a thread in {} seconds",
+                        config.restart_thread_delay
+                    );
 
                     let account = accounts::search_account_by_id(repo.clone(), id).await?;
 
@@ -90,7 +93,7 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
                         account,
                         repo.clone(),
                         config.clone(),
-                        0,
+                        config.restart_thread_delay,
                     );
                 }
             }
@@ -106,6 +109,7 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
 ///
 /// Propagates errors from underlying operations. A returned `WarmupError::NoActionsLeft`
 /// means that the account has no more available actions.
+#[tracing::instrument(skip_all, fields(address))]
 async fn process_account<P>(
     provider: P,
     repo: Arc<RepoImpls>,
@@ -116,6 +120,7 @@ where
     P: Provider<Ethereum>,
 {
     let signer = account.signer();
+    tracing::Span::current().record("address", signer.address().to_string());
     let evm_client =
         EvmClient::<_, StrictNonceManager>::new(signer, NamedChain::MonadTestnet.into(), provider);
 
@@ -146,6 +151,7 @@ where
         }
 
         let delay = random_in_range(config.action_delay) as u64;
+        tracing::info!("Sleeping for {delay} seconds");
         tokio::time::sleep(Duration::from_secs(delay)).await;
     }
 }

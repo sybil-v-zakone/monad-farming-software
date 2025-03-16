@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use alloy::{network::Ethereum, primitives::U256, providers::Provider};
+use alloy::{
+    network::Ethereum,
+    primitives::{U256, utils::format_units},
+    providers::Provider,
+};
 use common::{
     config::Config,
     onchain::{
@@ -36,6 +40,14 @@ where
     let token_out = Token::random_excluding(*token_in);
     let ratio = random_in_range(config.swap_ratio);
     let amount_in = token_in_balance * U256::from(ratio) / ONE_HUNDRED;
+
+    tracing::info!(
+        "{} | Swapping {} {} to {}",
+        dex,
+        format_units(amount_in, token_in.decimals()).map_err(WarmupError::FormatUnits)?,
+        token_in,
+        token_out
+    );
 
     let res = match dex {
         Dex::Hashflow => {

@@ -6,16 +6,17 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    // dep crates
+    #[error(transparent)]
+    Common(#[from] common::Error),
+
     #[error(transparent)]
     Warmup(#[from] WarmupError),
 
     #[error(transparent)]
     DatabaseError(#[from] database::error::Error),
 
-    // dep crates
-    #[error(transparent)]
-    Common(#[from] common::Error),
-
+    // ext
     #[error(transparent)]
     MenuError(#[from] dialoguer::Error),
 

@@ -13,7 +13,8 @@ nad_domains_count = [0, 0]
 
 # Misc settings
 thread_delay = [1000, 2000]
+restart_thread_delay = 5
 action_delay = [5, 5]
 deposit_ratio = [1, 2]
-swap_ratio = [2, 5]
+swap_ratio = [5, 10]
 rpc_url = "https://testnet-rpc.monad.xyz"

@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use alloy::{network::Ethereum, primitives::U256, providers::Provider};
+use alloy::{
+    network::Ethereum,
+    primitives::{U256, utils::format_units},
+    providers::Provider,
+};
 use common::{
     Error as CommonError,
     config::Config,
@@ -8,12 +12,13 @@ use common::{
         client::Client as EvmClient,
         dapps::{apriori, common::ONE_HUNDRED, kinza, shmonad},
         error::ClientError,
+        token::Token,
     },
     state::Lending,
     utils::random::random_in_range,
 };
 
-use crate::{Error, Result};
+use crate::{Error, Result, modules::warmup::error::WarmupError};
 
 pub async fn deposit<P>(
     lending: Lending,
@@ -31,6 +36,12 @@ where
 
     let ratio = random_in_range(config.deposit_ratio);
     let amount_in = balance * U256::from(ratio) / ONE_HUNDRED;
+
+    tracing::info!(
+        "{} | Depositting {} MON",
+        lending,
+        format_units(amount_in, Token::MON.decimals()).map_err(WarmupError::FormatUnits)?,
+    );
 
     let res = match lending {
         Lending::Apriori => apriori::deposit(evm_client, amount_in).await?,
