@@ -169,10 +169,7 @@ pub async fn swap<P>(
 where
     P: Provider<Ethereum>,
 {
-    let approved = match token_in.is_native() {
-        false => client.approve(token_in, BEAN_ROUTER, amount_in, false).await?,
-        true => true,
-    };
+    let approved = client.approve(token_in, BEAN_ROUTER, amount_in, false).await?;
 
     if !approved {
         return Ok(false);

@@ -19,7 +19,7 @@ sol! {
 
 const KINZA_CA: Address = address!("0x21d6192677f4bbff6BCCF11FC7D5c3076bFF6F1B");
 
-pub async fn deposit<P>(evm_client: &EvmClient<P>, amount: U256) -> Result<bool>
+pub async fn deposit<P>(evm_client: &EvmClient<P>, amount_in: U256) -> Result<bool>
 where
     P: Provider<Ethereum>,
 {
@@ -33,7 +33,7 @@ where
             .abi_encode(),
         )
         .with_to(KINZA_CA)
-        .with_value(amount);
+        .with_value(amount_in);
 
     evm_client.send_transaction(tx, None).await
 }

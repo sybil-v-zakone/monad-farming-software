@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+database = { path = "./database" }
+common = { path = "./common" }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 alloy = { workspace = true }
@@ -12,11 +14,9 @@ tracing-subscriber = "0.3.19"
 alloy-chains = { workspace = true }
 clap = { version = "4.5.32", features = ["derive"] }
 dialoguer = "0.11.0"
-database = { path = "./database" }
-
-common = { path = "./common" }
 rand = { workspace = true }
 url = "2.5.4"
+
 
 [workspace]
 members = [".", "migration", "database", "common"]

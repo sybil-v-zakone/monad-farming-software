@@ -1,15 +1,19 @@
 # Swap settings
-ambient_swap_count = [10, 20]
-hashflow_swap_count = [5, 15]
-bean_swap_count = [8, 16]
+ambient_swap_count = [0, 0]
+hashflow_swap_count = [0, 0]
+bean_swap_count = [0, 0]
 
 # Deposit settings
-apriori_deposit_count = [3, 7]
-kinza_deposit_count = [2, 6]
-shmonad_deposit_count = [4, 8]
+apriori_deposit_count = [0, 0]
+kinza_deposit_count = [0, 0]
+shmonad_deposit_count = [0, 0]
+
+# Nft settings
+nad_domains_count = [0, 0]
 
 # Misc settings
 thread_delay = [1000, 2000]
-deposit_ratio = [50, 70]
-swap_ratio = [30, 60]
-rpc_url = "https://your-rpc-url.com"
+action_delay = [5, 5]
+deposit_ratio = [1, 2]
+swap_ratio = [2, 5]
+rpc_url = "https://testnet-rpc.monad.xyz"

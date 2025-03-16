@@ -1,6 +1,6 @@
 use crate::Result;
 use alloy::{primitives::Address, signers::local::PrivateKeySigner};
-use common::state::{Dex, Lending};
+use common::state::{Dex, Lending, Nft};
 use derive_builder::Builder;
 use rand::seq::IndexedRandom;
 use rquest::Impersonate;
@@ -26,6 +26,7 @@ pub struct NewActiveModelOptions {
     target_hashflow_swaps_count: u32,
     target_kinza_deposit_count: u32,
     target_shmonad_deposit_count: u32,
+    target_nad_domains_count: u32,
 }
 
 impl AccountActiveModel {
@@ -40,6 +41,7 @@ impl AccountActiveModel {
             target_hashflow_swaps_count: Set(opts.target_hashflow_swaps_count as i32),
             target_kinza_deposit_count: Set(opts.target_kinza_deposit_count as i32),
             target_shmonad_deposit_count: Set(opts.target_shmonad_deposit_count as i32),
+            target_nad_domains_count: Set(opts.target_nad_domains_count as i32),
             ..Default::default()
         }
     }
@@ -70,8 +72,14 @@ impl AccountModel {
         if self.target_kinza_deposit_count > self.current_kinza_deposit_count {
             actions.push(AccountAction::Lending(Lending::Kinza));
         }
+
         if self.target_shmonad_deposit_count > self.current_shmonad_deposit_count {
             actions.push(AccountAction::Lending(Lending::Shmonad));
+        }
+
+        // mint domains and nfts
+        if self.target_nad_domains_count > self.current_nad_domains_count {
+            actions.push(AccountAction::Mint(Nft::NadDomains));
         }
 
         actions
@@ -111,4 +119,5 @@ impl AccountModel {
 pub enum AccountAction {
     Swap(Dex),
     Lending(Lending),
+    Mint(Nft),
 }

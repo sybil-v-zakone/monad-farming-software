@@ -35,7 +35,7 @@ where
 
     let token_out = Token::random_excluding(*token_in);
     let ratio = random_in_range(config.swap_ratio);
-    let amount_in = token_in_balance * (ONE_HUNDRED - U256::from(ratio) / ONE_HUNDRED);
+    let amount_in = token_in_balance * U256::from(ratio) / ONE_HUNDRED;
 
     let res = match dex {
         Dex::Hashflow => {

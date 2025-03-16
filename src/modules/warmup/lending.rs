@@ -28,8 +28,9 @@ where
         .get_balance(evm_client.address())
         .await
         .map_err(|e| Error::Common(CommonError::EvmClient(ClientError::Rpc(e))))?;
+
     let ratio = random_in_range(config.deposit_ratio);
-    let amount_in = balance * (ONE_HUNDRED - U256::from(ratio) / ONE_HUNDRED);
+    let amount_in = balance * U256::from(ratio) / ONE_HUNDRED;
 
     let res = match lending {
         Lending::Apriori => apriori::deposit(evm_client, amount_in).await?,

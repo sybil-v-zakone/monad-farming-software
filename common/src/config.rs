@@ -14,8 +14,12 @@ pub struct Config {
     pub kinza_deposit_count: [u32; 2],
     pub shmonad_deposit_count: [u32; 2],
 
+    // nft
+    pub nad_domains_count: [u32; 2],
+
     // misc
     pub thread_delay: [u64; 2],
+    pub action_delay: [u64; 2],
     pub deposit_ratio: [u32; 2],
     pub swap_ratio: [u32; 2],
     pub rpc_url: String,

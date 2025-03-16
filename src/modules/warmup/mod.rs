@@ -1,8 +1,14 @@
+use crate::Result;
 use alloy::{
     network::Ethereum,
     providers::{Provider, ProviderBuilder, RootProvider},
 };
 use alloy_chains::NamedChain;
+use common::{
+    config::Config,
+    onchain::client::{Client as EvmClient, StrictNonceManager},
+    utils::random::random_in_range,
+};
 use database::{
     entity::impls::{
         account::{AccountAction, AccountConditions},
@@ -11,23 +17,17 @@ use database::{
     repositories::RepoImpls,
     use_cases::accounts,
 };
-
-use common::{
-    config::Config,
-    onchain::client::{Client as EvmClient, StrictNonceManager},
-    utils::random::random_in_range,
-};
 use error::WarmupError;
 use lending::deposit;
+use mint::mint;
 use std::{str::FromStr, sync::Arc, time::Duration};
 use swap::swap;
 use tokio::task::JoinSet;
 use url::Url;
 
-use crate::Result;
-
 pub mod error;
 mod lending;
+mod mint;
 mod swap;
 
 pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()> {
@@ -130,14 +130,22 @@ where
             AccountAction::Swap(dex) => {
                 // true -> update_swap_count
                 if swap(dex, &account, &evm_client, config.clone()).await? {
-                    accounts::update_swap_count(repo.clone(), dex, account).await?;
+                    accounts::update_swap_count(repo.clone(), dex, &account).await?;
                 }
             }
             AccountAction::Lending(lending) => {
                 if deposit(lending, &evm_client, config.clone()).await? {
-                    accounts::update_deposit_count(repo.clone(), lending, account).await?;
+                    accounts::update_deposit_count(repo.clone(), lending, &account).await?;
+                }
+            }
+            AccountAction::Mint(nft) => {
+                if mint(nft, &account, &evm_client).await? {
+                    accounts::update_mint_count(repo.clone(), nft, account).await?;
                 }
             }
         }
+
+        let delay = random_in_range(config.action_delay) as u64;
+        tokio::time::sleep(Duration::from_secs(delay)).await;
     }
 }

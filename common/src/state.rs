@@ -11,3 +11,8 @@ pub enum Lending {
     Kinza,
     Shmonad,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub enum Nft {
+    NadDomains,
+}
