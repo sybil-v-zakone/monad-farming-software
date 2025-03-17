@@ -76,7 +76,7 @@ If you see the Rust version, the installation was successful.
 4. Run the project:
 
     ```
-    cargo build --release
+    cargo run --release
     ```
 
     The application will start running using the settings from the configuration file.
