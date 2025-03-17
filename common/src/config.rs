@@ -17,13 +17,20 @@ pub struct Config {
     // nft
     pub nad_domains_count: [u32; 2],
 
+    // bridge
+    pub need_bridge: bool,
+    pub bridge_amount_range: [f64; 2],
+
     // misc
     pub thread_delay: [u64; 2],
     pub action_delay: [u64; 2],
     pub deposit_ratio: [u32; 2],
     pub swap_ratio: [u32; 2],
     pub restart_thread_delay: u64,
-    pub rpc_url: String,
+
+    // rpc
+    pub monad_rpc_url: String,
+    pub base_rpc_url: String,
 }
 
 impl Config {

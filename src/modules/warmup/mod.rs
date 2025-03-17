@@ -4,6 +4,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder, RootProvider},
 };
 use alloy_chains::NamedChain;
+use bridge::bridge;
 use common::{
     config::Config,
     onchain::client::{Client as EvmClient, StrictNonceManager},
@@ -25,6 +26,7 @@ use swap::swap;
 use tokio::task::JoinSet;
 use url::Url;
 
+mod bridge;
 pub mod error;
 mod lending;
 mod mint;
@@ -32,7 +34,8 @@ mod swap;
 
 pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()> {
     let spawn_task = |handles: &mut JoinSet<_>,
-                      provider: RootProvider,
+                      monad_provider: RootProvider,
+                      base_provider: RootProvider,
                       account: AccountModel,
                       repo: Arc<_>,
                       config: Arc<_>,
@@ -40,7 +43,7 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
         handles.spawn(async move {
             let id = account.id;
             tokio::time::sleep(Duration::from_secs(delay)).await;
-            let res = process_account(provider, repo, config, account).await;
+            let res = process_account(monad_provider, base_provider, repo, config, account).await;
 
             (id, res)
         })
@@ -48,11 +51,17 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
 
     // The inner state of the root provider.
     // pub(crate) inner: Arc<RootProviderInner<N>>,
-    let provider = ProviderBuilder::new()
+    let monad_provider = ProviderBuilder::new()
         .disable_recommended_fillers()
         .network::<Ethereum>()
         .with_chain(NamedChain::MonadTestnet)
-        .on_http(Url::from_str(&config.rpc_url)?);
+        .on_http(Url::from_str(&config.monad_rpc_url)?);
+
+    let base_provider = ProviderBuilder::new()
+        .disable_recommended_fillers()
+        .network::<Ethereum>()
+        .with_chain(NamedChain::Base)
+        .on_http(Url::from_str(&config.base_rpc_url)?);
 
     let accounts = accounts::search(
         repo.clone(),
@@ -64,7 +73,15 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
 
     for (i, account) in accounts.into_iter().enumerate() {
         let delay = random_in_range(config.thread_delay) * i as u64;
-        spawn_task(&mut handles, provider.clone(), account, repo.clone(), config.clone(), delay);
+        spawn_task(
+            &mut handles,
+            monad_provider.clone(),
+            base_provider.clone(),
+            account,
+            repo.clone(),
+            config.clone(),
+            delay,
+        );
     }
 
     while let Some(res) = handles.join_next().await {
@@ -89,7 +106,8 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
 
                     spawn_task(
                         &mut handles,
-                        provider.clone(),
+                        monad_provider.clone(),
+                        base_provider.clone(),
                         account,
                         repo.clone(),
                         config.clone(),
@@ -111,7 +129,8 @@ pub async fn run_warmup(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()>
 /// means that the account has no more available actions.
 #[tracing::instrument(skip_all, fields(address))]
 async fn process_account<P>(
-    provider: P,
+    monad_provider: P,
+    base_provider: P,
     repo: Arc<RepoImpls>,
     config: Arc<Config>,
     account: AccountModel,
@@ -121,8 +140,15 @@ where
 {
     let signer = account.signer();
     tracing::Span::current().record("address", signer.address().to_string());
-    let evm_client =
-        EvmClient::<_, StrictNonceManager>::new(signer, NamedChain::MonadTestnet.into(), provider);
+
+    let monad_client = EvmClient::<_, StrictNonceManager>::new(
+        signer.clone(),
+        NamedChain::MonadTestnet.into(),
+        monad_provider,
+    );
+
+    let base_client =
+        EvmClient::<_, StrictNonceManager>::new(signer, NamedChain::Base.into(), base_provider);
 
     loop {
         let account = accounts::search_account_by_id(repo.clone(), account.id).await?;
@@ -134,18 +160,23 @@ where
         match action {
             AccountAction::Swap(dex) => {
                 // true -> update_swap_count
-                if swap(dex, &account, &evm_client, config.clone()).await? {
+                if swap(dex, &account, &monad_client, config.clone()).await? {
                     accounts::update_swap_count(repo.clone(), dex, &account).await?;
                 }
             }
             AccountAction::Lending(lending) => {
-                if deposit(lending, &evm_client, config.clone()).await? {
+                if deposit(lending, &monad_client, config.clone()).await? {
                     accounts::update_deposit_count(repo.clone(), lending, &account).await?;
                 }
             }
             AccountAction::Mint(nft) => {
-                if mint(nft, &account, &evm_client).await? {
+                if mint(nft, &account, &monad_client).await? {
                     accounts::update_mint_count(repo.clone(), nft, account).await?;
+                }
+            }
+            AccountAction::Bridge => {
+                if bridge(&base_client, config.clone()).await? {
+                    accounts::update_bridge_goal(repo.clone(), account).await?;
                 }
             }
         }

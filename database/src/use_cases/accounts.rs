@@ -111,9 +111,21 @@ pub async fn update_mint_count<R: Repositories>(
 
     match nft {
         Nft::NadDomains => {
-            active_model.current_kinza_deposit_count = Set(account.current_kinza_deposit_count + 1)
+            active_model.current_nad_domains_count = Set(account.current_nad_domains_count + 1)
         }
     };
+
+    repo.account().update(active_model).await
+}
+
+pub async fn update_bridge_goal<R: Repositories>(
+    repo: Arc<R>,
+    account: AccountModel,
+) -> Result<i32> {
+    let mut active_model =
+        AccountActiveModel { id: ActiveValue::set(account.id), ..Default::default() };
+
+    active_model.bridge_goal = Set(true);
 
     repo.account().update(active_model).await
 }

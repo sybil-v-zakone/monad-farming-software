@@ -29,6 +29,7 @@ impl MigrationTrait for Migration {
                     .col(integer(Account::TargetShmonadDepositCount))
                     .col(integer(Account::CurrentNadDomainsCount).default(0))
                     .col(integer(Account::TargetNadDomainsCount))
+                    .col(ColumnDef::new(Account::BridgeGoal).boolean().not_null())
                     .col(ColumnDef::new(Account::GoalReached).boolean().not_null().default(false))
                     .to_owned(),
             )
@@ -61,5 +62,6 @@ enum Account {
     TargetShmonadDepositCount,
     CurrentNadDomainsCount,
     TargetNadDomainsCount,
+    BridgeGoal,
     GoalReached,
 }

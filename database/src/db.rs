@@ -55,6 +55,7 @@ pub async fn generate(repo: Arc<RepoImpls>, config: Arc<Config>) -> Result<()> {
             .target_kinza_deposit_count(random_in_range(config.kinza_deposit_count))
             .target_shmonad_deposit_count(random_in_range(config.shmonad_deposit_count))
             .target_nad_domains_count(random_in_range(config.nad_domains_count))
+            .bridge_goal(!config.need_bridge)
             .build()?;
 
         let account = AccountActiveModel::new(opts);

@@ -27,6 +27,7 @@ pub struct NewActiveModelOptions {
     target_kinza_deposit_count: u32,
     target_shmonad_deposit_count: u32,
     target_nad_domains_count: u32,
+    bridge_goal: bool,
 }
 
 impl AccountActiveModel {
@@ -42,6 +43,7 @@ impl AccountActiveModel {
             target_kinza_deposit_count: Set(opts.target_kinza_deposit_count as i32),
             target_shmonad_deposit_count: Set(opts.target_shmonad_deposit_count as i32),
             target_nad_domains_count: Set(opts.target_nad_domains_count as i32),
+            bridge_goal: Set(opts.bridge_goal),
             ..Default::default()
         }
     }
@@ -86,6 +88,11 @@ impl AccountModel {
     }
 
     pub fn random_available_action(&self) -> Option<AccountAction> {
+        // Checking if a bridge is needed
+        if !self.bridge_goal {
+            return Some(AccountAction::Bridge);
+        }
+
         let actions = self.available_actions();
 
         actions.choose(&mut rand::rng()).copied()
@@ -120,4 +127,5 @@ pub enum AccountAction {
     Swap(Dex),
     Lending(Lending),
     Mint(Nft),
+    Bridge,
 }
