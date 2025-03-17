@@ -85,7 +85,7 @@ If you see the Rust version, the installation was successful.
 
 # **Configuration Settings Documentation**
 
-## This document outlines the configuration settings used in the application. Each setting is defined as a range `[x, y]`, from which a random value is selected at runtime. These settings control various aspects of the application, including swap counts, deposit counts, NFT minting, delays, and transaction ratios.
+This document outlines the configuration settings used in the application. Each setting is defined as a range `[x, y]`, from which a random value is selected at runtime. These settings control various aspects of the application, including swap counts, deposit counts, NFT minting, delays, and transaction ratios.
 
 ## **Swap Settings**
 
