@@ -1,4 +1,4 @@
-# **Retroactive soft for farming Monad testnet**
+# **Monad Testnet Farming Software**
 
 ## **Installing Rust**
 
