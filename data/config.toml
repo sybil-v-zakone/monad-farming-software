@@ -1,9 +1,12 @@
-# Swap settings
+# SWAP SETTINGS:
+# Each pair [x, y] represents a range. At runtime, a random value is selected from the range.
 ambient_swap_count = [0, 0]
 hashflow_swap_count = [0, 0]
 bean_swap_count = [0, 0]
 
-# Deposit settings
+
+# DEPOSIT SETTINGS:
+# Similarly, each deposit count is defined as a range.
 apriori_deposit_count = [0, 0]
 kinza_deposit_count = [0, 0]
 shmonad_deposit_count = [0, 0]
@@ -17,11 +20,25 @@ nad_domains_count = [1, 1]
 need_bridge = true
 bridge_amount_range = [0.0001, 0.0002]
 
-# Misc settings
+# MISC SETTINGS:
+# This setting defines a range [x, y] (e.g., [1000, 2000]) used as the base delay value (in seconds)
+# for staggering the processing of accounts.
 thread_delay = [1000, 2000]
+
+# This setting specifies a fixed delay (in seconds) before restarting a thread that has encountered an error.
 restart_thread_delay = 5
+
+# This setting defines a range [x, y] that represents a random delay (in seconds) between consecutive actions on a single account.
+# For example, after an account performs an action such as a swap, it will pause for a random duration within this range
+# before proceeding to the next action. This mechanism helps mimic realistic user behavior and prevents rapid, consecutive actions.
 action_delay = [5, 5]
+
+# This setting defines a range [x, y] representing the percentage of the account's balance that will be used during a deposit action.
+# When a deposit is triggered, a random percentage within this range is selected and applied to determine the deposit amount.
 deposit_ratio = [1, 2]
+
+# This setting defines a range [x, y] representing the percentage of the account's balance that will be used during a swap action.
+# When a swap is about to be performed, a random percentage within this range is chosen and applied to determine the swap amount.
 swap_ratio = [5, 10]
 
 # RPC settings
