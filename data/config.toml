@@ -12,7 +12,7 @@ kinza_deposit_count = [0, 0]
 shmonad_deposit_count = [0, 0]
 
 # Nft settings
-nad_domains_count = [1, 1]
+nad_domains_count = [0, 0]
 
 # Bridge settings
 # Set "true" if you want bridge some MON tokens from Base to Monad
