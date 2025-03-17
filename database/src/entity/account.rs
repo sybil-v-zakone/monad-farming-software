@@ -26,6 +26,7 @@ pub struct Model {
     pub target_shmonad_deposit_count: i32,
     pub current_nad_domains_count: i32,
     pub target_nad_domains_count: i32,
+    pub bridge_goal: bool,
     pub goal_reached: bool,
 }
 

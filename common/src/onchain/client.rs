@@ -179,6 +179,12 @@ where
         let signature = encode_prefixed(signature.as_bytes());
         Ok(signature)
     }
+
+    pub async fn get_native_balance(&self) -> Result<U256> {
+        let balance = self.provider.get_balance(self.address()).await.map_err(ClientError::Rpc)?;
+        Ok(balance)
+    }
+
     pub async fn get_nonzero_token_balances(&self) -> Result<Vec<(Token, U256)>> {
         let tokens =
             Token::iter().filter(|t| !t.is_native() && t.is_swap_allowed()).collect::<Vec<_>>();
@@ -197,8 +203,7 @@ where
             .filter(|(_, bal)| *bal > U256::ZERO)
             .collect::<Vec<_>>();
 
-        let mon_balance =
-            self.provider.get_balance(self.address()).await.map_err(ClientError::Rpc)?;
+        let mon_balance = self.get_native_balance().await?;
         token_balances.push((Token::MON, mon_balance));
 
         Ok(token_balances)

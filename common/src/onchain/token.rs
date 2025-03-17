@@ -12,6 +12,7 @@ pub enum Token {
     WMON,
     SHMON,
     APRMON,
+    ETH,
 }
 
 impl Token {
@@ -22,6 +23,7 @@ impl Token {
             Token::WMON => 18,
             Token::SHMON => 18,
             Token::APRMON => 18,
+            Token::ETH => 18,
         }
     }
 
@@ -32,6 +34,7 @@ impl Token {
             Token::WMON => address!("0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701"),
             Token::SHMON => address!("0x3a98250F98Dd388C211206983453837C8365BDc1"),
             Token::APRMON => address!("0xb2f82D0f38dc453D596Ad40A37799446Cc89274A"),
+            Token::ETH => Address::ZERO, // Using for the Base chain
         }
     }
 
@@ -42,6 +45,7 @@ impl Token {
             Token::WMON => false,
             Token::SHMON => false,
             Token::APRMON => false,
+            Token::ETH => true,
         }
     }
 
@@ -52,6 +56,7 @@ impl Token {
             Token::WMON => false,
             Token::SHMON => false,
             Token::APRMON => false,
+            Token::ETH => false,
         }
     }
 
@@ -62,6 +67,7 @@ impl Token {
             Token::WMON => "wMON",
             Token::SHMON => "shMON",
             Token::APRMON => "aprMON",
+            Token::ETH => "ETH",
         }
     }
 
