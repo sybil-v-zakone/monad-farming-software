@@ -16,7 +16,7 @@ nad_domains_count = [1, 1]
 
 # Bridge settings
 # Set "true" if you want bridge some MON tokens from Base to Monad
-# using GasZip before performing warmup , or use default "false"
+# using GasZip before performing warmup, or use default "false"
 need_bridge = true
 bridge_amount_range = [0.0001, 0.0002]
 
