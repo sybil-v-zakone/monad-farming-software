@@ -24,7 +24,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error(transparent)]
-    Request(#[from] rquest::Error),
+    Request(#[from] reqwest::Error),
 
     #[error(transparent)]
     Toml(#[from] toml::de::Error),

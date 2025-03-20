@@ -11,7 +11,7 @@ use alloy::{
     sol_types::SolCall,
 };
 use fake::{Fake, faker::internet::en::Username};
-use rquest::Client as RquestClient;
+use reqwest::Client as ReqwestClient;
 use serde::Deserialize;
 
 use crate::onchain::client::Client as EvmClient;
@@ -50,7 +50,7 @@ fn get_valid_domain_name() -> String {
     invalid_domain_name.replace("_", "")
 }
 
-pub async fn mint<P>(evm_client: &EvmClient<P>, http_client: RquestClient) -> Result<bool>
+pub async fn mint<P>(evm_client: &EvmClient<P>, http_client: ReqwestClient) -> Result<bool>
 where
     P: Provider<Ethereum>,
 {

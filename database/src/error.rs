@@ -12,7 +12,7 @@ pub enum Error {
     NotFound,
 
     #[error(transparent)]
-    Request(#[from] rquest::Error),
+    Request(#[from] reqwest::Error),
 
     #[error(transparent)]
     Common(#[from] common::Error),

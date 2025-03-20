@@ -21,6 +21,6 @@ alloy = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 migration = { path = "../migration" }
-rquest = { workspace = true }
+reqwest = { workspace = true }
 common = { path = "../common" }
 derive_builder = "0.20.2"

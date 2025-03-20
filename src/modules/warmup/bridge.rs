@@ -20,10 +20,8 @@ use super::error::WarmupError;
 
 fn get_bridge_amount(bridge_amount_range: [f64; 2]) -> U256 {
     let random_amount = random_in_range(bridge_amount_range);
-    let bridge_amount = parse_ether(&random_amount.to_string())
-        .expect("Check your \"bridge_amount_range\" in config.toml");
-
-    bridge_amount
+    parse_ether(&random_amount.to_string())
+        .expect("Check your \"bridge_amount_range\" in config.toml")
 }
 
 pub async fn bridge<P>(evm_client: &EvmClient<P>, config: Arc<Config>) -> Result<bool>

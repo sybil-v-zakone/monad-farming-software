@@ -5,7 +5,7 @@ use alloy::{
     providers::Provider,
     sol,
 };
-use rquest::{Client as RquestClient, header};
+use reqwest::{Client as ReqwestClient, header};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -122,7 +122,7 @@ const HASHFLOW_CA: Address = address!("0xca310b1b942a30ff4b40a5e1b69ab4607ec79bc
 const HASHFLOW_API_URL: &str = "https://api.hashflow.com/client/v3/rfq";
 
 async fn get_quote(
-    rquest_client: RquestClient,
+    http_client: ReqwestClient,
     token_in: Address,
     token_out: Address,
     amount_in: U256,
@@ -145,7 +145,7 @@ async fn get_quote(
         }],
     };
 
-    let res = rquest_client
+    let res = http_client
         .post(HASHFLOW_API_URL)
         .headers(headers)
         .json(&req)
@@ -186,7 +186,7 @@ impl RFQTQuote {
 
 pub async fn swap<P>(
     evm_client: &EvmClient<P>,
-    rquest_client: RquestClient,
+    http_client: ReqwestClient,
     token_in: Token,
     token_out: Token,
     amount_in: U256,
@@ -201,7 +201,7 @@ where
     }
 
     let quote = get_quote(
-        rquest_client,
+        http_client,
         token_in.address(),
         token_out.address(),
         amount_in,

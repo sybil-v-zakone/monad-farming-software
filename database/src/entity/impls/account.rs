@@ -3,7 +3,6 @@ use alloy::{primitives::Address, signers::local::PrivateKeySigner};
 use common::state::{Dex, Lending, Nft};
 use derive_builder::Builder;
 use rand::seq::IndexedRandom;
-use rquest::Impersonate;
 use sea_orm::Set;
 use std::str::FromStr;
 
@@ -106,18 +105,18 @@ impl AccountModel {
         self.signer().address()
     }
 
-    fn proxy(&self) -> Option<rquest::Proxy> {
-        self.proxy.as_ref().and_then(|p| rquest::Proxy::all(p).ok())
+    fn proxy(&self) -> Option<reqwest::Proxy> {
+        self.proxy.as_ref().and_then(|p| reqwest::Proxy::all(p).ok())
     }
 
-    pub fn http_client(&self) -> Result<rquest::Client> {
-        let mut builder = rquest::Client::builder();
+    pub fn http_client(&self) -> Result<reqwest::Client> {
+        let mut builder = reqwest::Client::builder();
 
         if let Some(proxy) = self.proxy() {
             builder = builder.proxy(proxy)
         }
 
-        let client = builder.impersonate(Impersonate::Chrome133).build()?;
+        let client = builder.build()?;
         Ok(client)
     }
 }
